@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AI Service Buddy</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="home-page">
+
+  <div class="container">
+    <header class="page-header">
+      <p class="eyebrow">ISUZU</p>
+      <h1 class="title">AI Service Buddy</h1>
+      <p class="tagline">ค้นหาข้อมูลบริการและคำแนะนำได้รวดเร็ว</p>
+    </header>
+
+    <div class="search-box" role="search">
+      <label class="visually-hidden" for="searchInput">ค้นหา</label>
+      <input
+        type="search"
+        placeholder="ค้นหา..."
+        id="searchInput"
+        autocomplete="off"
+      />
+      <span class="icon" aria-hidden="true">🔍</span>
+    </div>
+
+    <section class="answer-card" id="answerCard" aria-live="polite">
+      <p class="answer-label">คำตอบจาก AI</p>
+      <p class="answer-text" id="answerText">พิมพ์คำถามแล้วกด Enter เพื่อเริ่มใช้งาน</p>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
