@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+backend/rag/__pycache__/
+backend/routes/__pycache__/
+backend/db/
+.git/
+.gitignore

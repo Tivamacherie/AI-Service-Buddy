@@ -4,34 +4,56 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AI Service Buddy</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=20260412b" />
 </head>
-<body class="home-page">
+<body class="neo-chat-page">
+  <div id="sidebarBackdrop" class="drawer-backdrop" aria-hidden="true"></div>
 
-  <div class="container">
-    <header class="page-header">
-      <p class="eyebrow">ISUZU</p>
-      <h1 class="title">AI Service Buddy</h1>
-      <p class="tagline">ค้นหาข้อมูลบริการและคำแนะนำได้รวดเร็ว</p>
-    </header>
+  <div class="neo-shell">
+    <aside id="sidebar" class="history-drawer">
+      <div class="drawer-top">
+        <p class="drawer-kicker">AI SERVICE BUDDY</p>
+        <h1 class="drawer-title">Smart Mechanic</h1>
+        <button id="newChatBtn" class="drawer-new-btn" type="button">เริ่มแชทใหม่</button>
+      </div>
 
-    <div class="search-box" role="search">
-      <label class="visually-hidden" for="searchInput">ค้นหา</label>
-      <input
-        type="search"
-        placeholder="ค้นหา..."
-        id="searchInput"
-        autocomplete="off"
-      />
-      <span class="icon" aria-hidden="true">🔍</span>
-    </div>
+      <section class="drawer-history" aria-label="ประวัติแชท">
+        <p class="drawer-section-title">แชทล่าสุด</p>
+        <div id="chatHistoryList" class="drawer-history-list"></div>
+      </section>
 
-    <section class="answer-card" id="answerCard" aria-live="polite">
-      <p class="answer-label">คำตอบจาก AI</p>
-      <p class="answer-text" id="answerText">พิมพ์คำถามแล้วกด Enter เพื่อเริ่มใช้งาน</p>
-    </section>
+      <footer class="drawer-footer">
+        <span class="drawer-status-label">สถานะระบบ</span>
+        <span id="apiStatus" class="drawer-status-value">พร้อมใช้งาน</span>
+      </footer>
+    </aside>
+
+    <main class="neo-main">
+      <header class="neo-topbar">
+        <button id="toggleSidebarBtn" class="topbar-menu" type="button" aria-label="เปิดประวัติแชท">☰</button>
+        <div class="topbar-copy">
+          <h2 class="topbar-title">Service Copilot Chat</h2>
+          <p class="topbar-subtitle">วิเคราะห์อาการรถแบบคุยกับช่างจริง</p>
+        </div>
+      </header>
+
+      <section id="chatThread" class="neo-thread" aria-live="polite"></section>
+
+      <div id="quickPrompts" class="neo-prompts" aria-label="คำถามแนะนำ"></div>
+
+      <form id="composerForm" class="neo-composer" autocomplete="off">
+        <label class="visually-hidden" for="chatInput">พิมพ์ข้อความ</label>
+        <textarea
+          id="chatInput"
+          class="neo-input"
+          rows="1"
+          placeholder="อธิบายอาการรถ เช่น สตาร์ทติดยากตอนเช้า"
+        ></textarea>
+        <button id="sendBtn" class="neo-send" type="submit">ส่ง</button>
+      </form>
+    </main>
   </div>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=20260412b"></script>
 </body>
 </html>
