@@ -4,6 +4,7 @@
   const SESSION_KEY = "AI_SERVICE_BUDDY_SESSION_ID";
   const CHAT_LIST_KEY = "AI_SERVICE_BUDDY_CHAT_LIST";
   const MAX_INPUT_HEIGHT = 180;
+  
 
   function buildAskApiCandidates() {
     const candidates = [];
@@ -43,11 +44,10 @@
   const inputEl = document.getElementById("chatInput");
   const sendBtnEl = document.getElementById("sendBtn");
   const newChatBtnEl = document.getElementById("newChatBtn");
-  const toggleSidebarBtnEl = document.getElementById("toggleSidebarBtn");
   const chatHistoryListEl = document.getElementById("chatHistoryList");
   const apiStatusEl = document.getElementById("apiStatus");
 
-  if (!sidebarEl || !sidebarBackdropEl || !threadEl || !quickPromptsEl || !formEl || !inputEl || !sendBtnEl || !newChatBtnEl || !toggleSidebarBtnEl || !chatHistoryListEl || !apiStatusEl) {
+  if (!sidebarEl || !sidebarBackdropEl || !threadEl || !quickPromptsEl || !formEl || !inputEl || !sendBtnEl || !newChatBtnEl || !chatHistoryListEl || !apiStatusEl) {
     return;
   }
 
@@ -431,10 +431,6 @@
     setStatus("เริ่มแชทใหม่เรียบร้อย");
     renderChatList();
     closeSidebarOnMobile();
-  });
-
-  toggleSidebarBtnEl.addEventListener("click", () => {
-    setSidebarOpen(!sidebarEl.classList.contains("open"));
   });
 
   sidebarBackdropEl.addEventListener("click", () => {

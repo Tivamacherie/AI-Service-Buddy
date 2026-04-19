@@ -55,6 +55,20 @@ macOS / Linux
 - `USE_MANUAL_CONTEXT` (`true`/`false`, default: `false`)
 - `QA_DB_PATH` (default: `backend/db/chat_memory.sqlite3`)
 
+ตัวอย่างไฟล์ `.env` สำหรับรัน local:
+```env
+CLOUD_LLM_API_KEY=your_api_key_here
+CLOUD_LLM_BASE_URL=https://api.openai.com
+CLOUD_LLM_MODEL=gpt-4.1-mini
+```
+
+ถ้าใช้คีย์ขึ้นต้น `sk-or-v1` ของ OpenRouter ให้ใช้ค่านี้แทน:
+```env
+CLOUD_LLM_API_KEY=sk-or-v1-...
+CLOUD_LLM_BASE_URL=https://openrouter.ai/api/v1
+CLOUD_LLM_MODEL=openai/gpt-4.1-mini
+```
+
 ## Health Check
 - `GET /health`
 

@@ -1,18 +1,24 @@
 from pathlib import Path
 import os
 
-from flask import Flask, redirect, request, send_from_directory
+from flask import Flask, abort, redirect, request, send_from_directory
 from werkzeug.middleware.proxy_fix import ProxyFix
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from routes.chat import chat_bp
 from storage.qa_store import init_db
+
 
 
 def create_app() -> Flask:
     app = Flask(__name__)
     init_db()
     app.register_blueprint(chat_bp)
-    frontend_root = Path(__file__).resolve().parent.parent
+    project_root = Path(__file__).resolve().parent.parent
+    frontend_root = project_root / "frontend"
     app_env = os.getenv("APP_ENV", "development").strip().lower()
     is_production = app_env in {"prod", "production"}
     force_https = os.getenv("FORCE_HTTPS", "true").strip().lower() == "true"
@@ -89,7 +95,13 @@ def create_app() -> Flask:
 
     @app.get("/<path:filename>")
     def serve_frontend_files(filename: str):
-        return send_from_directory(frontend_root, filename)
+        # Serve files from frontend root first, then support legacy top-level URLs.
+        for base_dir in (frontend_root, frontend_root / "css", frontend_root / "js"):
+            candidate = base_dir / filename
+            if candidate.is_file():
+                return send_from_directory(base_dir, filename)
+
+        abort(404)
 
     return app
 

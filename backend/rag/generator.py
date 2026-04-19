@@ -189,7 +189,10 @@ def _cloud_chat_completions(messages: List[Dict[str, str]]) -> str:
         return "ยังไม่ได้ตั้งค่า Cloud LLM API key กรุณาตั้งค่า CLOUD_LLM_API_KEY"
 
     base = CLOUD_LLM_BASE_URL.rstrip("/")
-    url = f"{base}/v1/chat/completions"
+    if base.endswith("/v1"):
+        url = f"{base}/chat/completions"
+    else:
+        url = f"{base}/v1/chat/completions"
     payload = {
         "model": CLOUD_LLM_MODEL,
         "messages": messages,
