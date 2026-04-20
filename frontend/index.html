@@ -4,44 +4,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AI Service Buddy</title>
-  <link rel="stylesheet" href="/css/style.css?v=20260412b" />
+  <link rel="stylesheet" href="/css/index.css?v=20260412b" />
 </head>
-<body class="neo-chat-page">
-  <div id="sidebarBackdrop" class="drawer-backdrop" aria-hidden="true"></div>
+<body class="home-page">
+  <div class="top-bar">
+    <div class="top-bar-icons"> 
+        <button id="hamburgerBtn" class="hamburger-btn" type="button">
+        <img src="assets/hamburger.svg" width="30" /> </button>
 
-  <div class="neo-shell">
-    <aside id="sidebar" class="history-drawer">
-      <div class="drawer-top">
-        <h1 class="drawer-kicker">ISUZU</h1>
-        <h3 class="drawer-title">AI SERVICE BUDDY</h3>
-
-        <button id="newChatBtn" class="drawer-new-btn" type="button">
-          <img src="assets/newchat.svg" width="18" />
-          <span>เริ่มแชทใหม่</span>
+        <button id="newChatBtn" class="new-btn" type="button">
+          <img src="assets/newchat.svg" width="27" />
         </button>
-      </div>
+    </div>
+    <h1 class="top-bar-text">AI Service Buddy</h1> </div>
 
-      <section class="drawer-history" aria-label="ประวัติแชท">
-        <p class="drawer-section-title">แชทล่าสุด</p>
-        <div id="chatHistoryList" class="drawer-history-list"></div>
-      </section>
+  <div class="main-content"> 
+    <div class="hero-section">
+        <img src="assets/logo.svg" alt="ISUZU" class="hero-logo" />
+        <section id="chatThread" class="neo-thread" aria-live="polite"></section>
 
-      <footer class="drawer-footer">
-        <span class="drawer-status-label">สถานะระบบ</span>
-        <span id="apiStatus" class="drawer-status-value">พร้อมใช้งาน</span>
-      </footer>
-    </aside>
+    </div>
+ 
 
     <main class="neo-main">
-      <header class="neo-topbar">
-        <div class="topbar-copy">
-          <h2 class="topbar-title">AI SERVICE BUDDY</h2>
-          <p class="topbar-subtitle">วิเคราะห์อาการรถแบบคุยกับช่างจริง</p>
-        </div>
-      </header>
-
-      <section id="chatThread" class="neo-thread" aria-live="polite"></section>
-
       <div id="quickPrompts" class="neo-prompts" aria-label="คำถามแนะนำ"></div>
 
       <form id="composerForm" class="neo-composer" autocomplete="off">
@@ -55,7 +40,15 @@
         <button id="sendBtn" class="neo-send" type="submit">ส่ง</button>
       </form>
     </main>
+
   </div>
+
+  <!-- กล่องซ่อน" (Dummy) สำหรับ Element ที่คุณไม่ได้ใช้ในหน้านี้แล้ว เพื่อหลอกให้ JavaScript ทำงานผ่านไปได้โดยไม่ Error ครับ -->
+  <div id="sidebar" style="display:none;"></div>
+  <div id="sidebarBackdrop" style="display:none;"></div>
+  <div id="chatHistoryList" style="display:none;"></div>
+  <div id="apiStatus" style="display:none;"></div>
+  <!------------------------------------------------------------------------------------------------------->
 
   <script src="/js/script.js?v=20260412b"></script>
 </body>

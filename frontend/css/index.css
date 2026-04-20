@@ -1,0 +1,212 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+:root {
+  --brand-color: #A31E19; /* สีแดงเข้ม (Maroon) ของ ISUZU */
+  --text-color: #A31E19;
+  --desc-text-color: #666;
+  --bg-color: #FFFFFF;
+  --input-bg-color: #F2F2F2;
+  --chip-border-color: #A31E19;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+/* --- แถบด้านบน (Top Bar) --- */
+.top-bar {
+  padding: 10px 20px;
+  background-color: var(--bg-color);
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.top-bar-icons {
+  padding-top: 2%;
+  display: flex;
+  gap: 15px; /* ลดระยะห่างลงนิดหน่อยเพื่อให้พอดี */
+}
+
+.top-bar-text {
+  padding-top: 2%;
+  margin: 0 0 0 20px;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--brand-color);
+}
+
+.top-bar button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.top-bar button img {
+  display: block;
+}
+
+/* --- พื้นที่เนื้อหาหลัก (Main Content Area) --- */
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* จัดกลางในแนวตั้ง */
+  align-items: center;     /* จัดกลางในแนวนอน */
+  margin-top: -10%;
+  padding: 20px;
+}
+
+/* --- ส่วนโลโก้และพาดหัว (Hero Section) --- */
+.hero-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 50px;
+}
+
+.hero-logo {
+  width: 300px;
+  margin-bottom: 10px;
+}
+
+.hero-title {
+  margin: 0 0 20px;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--brand-color);
+}
+
+.neo-thread {
+  margin: 0;
+  font-size: 16px;
+  color: var(--desc-text-color);
+  text-align: center;
+  line-height: 1.6;
+  max-width: 600px;
+}
+
+
+/*-----------แถบด้านล่าง(คำถามแนะนำ+ช่องพิมพ์)---------- */
+.neo-main {
+  position: fixed;
+  bottom: 0;       /* สั่งให้ชิดขอบล่าง 0 พิกเซล */
+  width: 100%;     /* ให้กว้างเต็มจอ */
+  padding: 20px;
+  background-color: transparent; /* ใส่สีพื้นหลังกันเนื้อหาข้างล่างทะลุ */
+}
+
+  /* ----- คำถามแนะนำ----- */
+.neo-prompts {
+  display: flex;
+  gap: 0.48rem;
+  overflow-x: auto;
+  padding: 0 clamp(0.9rem, 3vw, 3.8rem) 0.55rem;
+  justify-content: center;
+}
+
+.prompt-chip {
+  border: 1px solid #710100;
+  background: #FFFFFF;
+  color: #710100;
+  border-radius: 999px;
+  padding: 0.42rem 0.72rem;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.prompt-chip:hover {
+  border-color: #710100;
+  background: #a51210;
+  /* background: linear-gradient(180deg, #ff9897, #d31511); */
+  color: #fff;
+}
+  /* ---------------------- */
+
+
+  /* -----กล่องพิมพ์ข้อความ------ */
+.neo-composer {
+  display: flex;
+  gap: 0.65rem;
+  padding: 0.78rem clamp(0.9rem, 3vw, 3.8rem) calc(0.9rem + env(safe-area-inset-bottom));
+  background: #fff;
+  backdrop-filter: blur(8px);
+  width: 80%;
+  padding-bottom: 2%;
+  margin-left: auto;   /* ดันซ้ายให้มาตรงกลาง */
+  margin-right: auto;  /* ดันขวาให้มาตรงกลาง */
+  margin-top: auto;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.neo-input {
+  flex: 1;
+  resize: none;
+  min-height: 50px;
+  max-height: 180px;
+  border: 1px solid #d6d6d6;
+  background: #FFFFFF;
+  border-radius: 999px;
+  padding: 0.85rem 0.95rem;
+  font: inherit;
+  color: #2e271f;
+  outline: none;
+}
+
+.neo-input::placeholder {
+  color: #a8a8a8;
+}
+
+.neo-input:focus {
+  border-color: #d6d6d6;
+}
+
+.neo-send {
+  border: 1px solid #d6d6d6;
+  /* background: linear-gradient(135deg, #f59e0b, #ea580c); */
+  background: #000000;
+  color: #fff;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0 1.25rem;
+  cursor: pointer;
+}
+
+.neo-send:disabled,.neo-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+  /* ---------------------- */
+/*-------------------------------------------------- */
+
+
+
