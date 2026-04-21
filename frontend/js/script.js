@@ -3,6 +3,7 @@
   const STORAGE_KEY = "AI_SERVICE_BUDDY_API_URL";
   const SESSION_KEY = "AI_SERVICE_BUDDY_SESSION_ID";
   const CHAT_LIST_KEY = "AI_SERVICE_BUDDY_CHAT_LIST";
+  const PENDING_MSG_KEY = "AI_SERVICE_BUDDY_PENDING_MSG"; // คีย์สำหรับฝากข้อความข้ามหน้า
   const MAX_INPUT_HEIGHT = 180;
 
   function buildAskApiCandidates() {
@@ -49,11 +50,10 @@
   const chatHistoryListEl = document.getElementById("chatHistoryList");
   const apiStatusEl = document.getElementById("apiStatus");
 
-  // ปุ่มที่เพิ่มเข้ามาใหม่สำหรับ Sidebar
   const hamburgerBtn = document.getElementById("hamburgerBtn");
   const closeSidebarBtn = document.getElementById("closeSidebarBtn");
-  const newChatBtnEl = document.getElementById("newChatBtn"); // ปุ่ม top-bar
-  const sidebarNewChatBtn = document.getElementById("sidebarNewChatBtn"); // ปุ่มใน sidebar
+  const newChatBtnEl = document.getElementById("newChatBtn");
+  const sidebarNewChatBtn = document.getElementById("sidebarNewChatBtn");
 
   if (
     !sidebarEl ||
@@ -80,17 +80,18 @@
     "เบรกแล้วมีเสียงดัง ต้องเช็คอะไร",
   ];
 
+  // เช็คว่าอยู่หน้า index หรือไม่
+  const isIndexPage = window.location.pathname.includes('index.html') || window.location.pathname.endsWith('/');
+
   // ==========================================
-  // Sidebar Toggle System (ระบบเปิด-ปิดเมนูซ้าย)
+  // Sidebar Toggle System
   // ==========================================
   const body = document.body;
 
   function toggleSidebar() {
     if (window.innerWidth > 980) {
-      // หน้าจอใหญ่ (PC): พับ/ขยาย Sidebar
       body.classList.toggle("sidebar-closed");
     } else {
-      // หน้าจอเล็ก (Mobile): สไลด์ Sidebar เข้า/ออก
       body.classList.toggle("sidebar-open");
     }
   }
@@ -101,26 +102,12 @@
     }
   }
 
-  // ผูก Event ให้ปุ่ม Hamburger
-  if (hamburgerBtn) {
-    hamburgerBtn.addEventListener("click", toggleSidebar);
-  }
+  if (hamburgerBtn) hamburgerBtn.addEventListener("click", toggleSidebar);
+  if (closeSidebarBtn) closeSidebarBtn.addEventListener("click", closeSidebarOnMobile);
+  if (sidebarBackdropEl) sidebarBackdropEl.addEventListener("click", closeSidebarOnMobile);
 
-  // ผูก Event ให้ปุ่ม X ใน Sidebar (โชว์เฉพาะมือถือ)
-  if (closeSidebarBtn) {
-    closeSidebarBtn.addEventListener("click", closeSidebarOnMobile);
-  }
-
-  // ปิด Sidebar เมื่อกดที่พื้นหลังดำ (เฉพาะมือถือ)
-  if (sidebarBackdropEl) {
-    sidebarBackdropEl.addEventListener("click", closeSidebarOnMobile);
-  }
-
-  // จัดการเวลาผู้ใช้ย่อ/ขยายหน้าต่างเบราว์เซอร์
   window.addEventListener("resize", () => {
-    if (window.innerWidth > 980) {
-      body.classList.remove("sidebar-open"); // ลบคลาสของมือถือทิ้ง
-    }
+    if (window.innerWidth > 980) body.classList.remove("sidebar-open");
   });
 
   // ==========================================
@@ -131,20 +118,13 @@
     try {
       const raw = localStorage.getItem(CHAT_LIST_KEY) || "[]";
       const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed.filter((x) => x && x.id).slice(0, 80);
-    } catch (_) {
-      return [];
-    }
+      return Array.isArray(parsed) ? parsed.filter((x) => x && x.id).slice(0, 80) : [];
+    } catch (_) { return []; }
   }
 
   function saveChatList(list) {
     chatList = list.slice(0, 80);
-    try {
-      localStorage.setItem(CHAT_LIST_KEY, JSON.stringify(chatList));
-    } catch (_) {
-      // Ignore
-    }
+    try { localStorage.setItem(CHAT_LIST_KEY, JSON.stringify(chatList)); } catch (_) {}
   }
 
   function titleFromQuestion(text) {
@@ -175,29 +155,19 @@
         ...current,
         preview: item.preview,
         updatedAt: now,
-        title:
-          current.title && current.title !== "แชทใหม่"
-            ? current.title
-            : item.title,
+        title: current.title && current.title !== "แชทใหม่" ? current.title : item.title,
       };
     } else {
       chatList.unshift(item);
     }
-
     chatList.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
     saveChatList(chatList);
     renderChatList();
   }
 
   function ensureSessionInList(sessionId, title = "แชทใหม่") {
-    if (!sessionId) return;
-    if (chatList.some((c) => c.id === sessionId)) return;
-    chatList.unshift({
-      id: sessionId,
-      title,
-      preview: "ยังไม่มีข้อความ",
-      updatedAt: Date.now(),
-    });
+    if (!sessionId || chatList.some((c) => c.id === sessionId)) return;
+    chatList.unshift({ id: sessionId, title, preview: "ยังไม่มีข้อความ", updatedAt: Date.now() });
     saveChatList(chatList);
   }
 
@@ -212,20 +182,14 @@
       return;
     }
 
-    // สร้างสไตล์ชั่วคราวให้ประวัติแชทดูดีขึ้น (คุณสามารถย้ายไปไว้ใน chat.css ได้)
-    const btnStyle = `
-      width: 100%; text-align: left; padding: 10px 15px; margin-bottom: 5px; 
-      border: none; background: transparent; border-radius: 8px; cursor: pointer; transition: background 0.2s;
-    `;
+    const btnStyle = `width: 100%; text-align: left; padding: 10px 15px; margin-bottom: 5px; border: none; background: transparent; border-radius: 8px; cursor: pointer; transition: background 0.2s;`;
 
     for (const item of chatList) {
       const btn = document.createElement("button");
       btn.type = "button";
-      // ถ้าเป็นห้องปัจจุบัน ให้พื้นหลังเป็นสีเทาอ่อน
       const isActive = item.id === activeSessionId;
       btn.style.cssText = btnStyle + (isActive ? "background: #f0f0f0;" : "");
       
-      // Hover Effect
       btn.onmouseover = () => { if (!isActive) btn.style.background = "#fafafa"; };
       btn.onmouseout = () => { if (!isActive) btn.style.background = "transparent"; };
 
@@ -241,38 +205,30 @@
       btn.appendChild(preview);
 
       btn.addEventListener("click", async () => {
-        await switchToSession(item.id);
+        if (isIndexPage) {
+          // ถ้าอยู่หน้า index ให้จำ session แล้วย้ายไป chat.html
+          localStorage.setItem(SESSION_KEY, item.id);
+          window.location.href = "chat.html";
+        } else {
+          await switchToSession(item.id);
+        }
       });
-
       chatHistoryListEl.appendChild(btn);
     }
   }
 
   function getSessionId() {
-    let sid = "";
-    try {
-      sid = (localStorage.getItem(SESSION_KEY) || "").trim();
-      if (!sid) {
-        sid =
-          (window.crypto && window.crypto.randomUUID && window.crypto.randomUUID()) ||
-          `${Date.now()}`;
-        localStorage.setItem(SESSION_KEY, sid);
-      }
-    } catch (_) {
-      sid = `${Date.now()}`;
+    let sid = (localStorage.getItem(SESSION_KEY) || "").trim();
+    if (!sid) {
+      sid = (window.crypto && window.crypto.randomUUID && window.crypto.randomUUID()) || `${Date.now()}`;
+      localStorage.setItem(SESSION_KEY, sid);
     }
     return sid;
   }
 
   function createNewSession() {
-    const sid =
-      (window.crypto && window.crypto.randomUUID && window.crypto.randomUUID()) ||
-      `${Date.now()}`;
-    try {
-      localStorage.setItem(SESSION_KEY, sid);
-    } catch (_) {
-      // Ignore
-    }
+    const sid = (window.crypto && window.crypto.randomUUID && window.crypto.randomUUID()) || `${Date.now()}`;
+    localStorage.setItem(SESSION_KEY, sid);
     return sid;
   }
 
@@ -293,7 +249,6 @@
   function appendMessage(role, text, source = "") {
     const row = document.createElement("div");
     row.className = `message-row ${role}`;
-
     const bubble = document.createElement("div");
     bubble.className = "message-bubble";
     bubble.textContent = (text || "").trim() || "-";
@@ -305,7 +260,6 @@
       meta.textContent = `แหล่งคำตอบ: ${source}`;
       bubble.appendChild(meta);
     }
-
     threadEl.appendChild(row);
     scrollToBottom();
   }
@@ -314,14 +268,11 @@
     const row = document.createElement("div");
     row.className = "message-row assistant";
     row.id = "typingRow";
-
     const bubble = document.createElement("div");
     bubble.className = "message-bubble";
-
     const typing = document.createElement("div");
     typing.className = "typing";
     typing.innerHTML = "<span></span><span></span><span></span>";
-
     bubble.appendChild(typing);
     row.appendChild(bubble);
     return row;
@@ -344,59 +295,39 @@
   async function fetchWithTimeout(url, options, timeoutMs) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      return await fetch(url, { ...options, signal: controller.signal });
-    } finally {
-      clearTimeout(timer);
-    }
+    try { return await fetch(url, { ...options, signal: controller.signal }); } 
+    finally { clearTimeout(timer); }
   }
 
   async function askBackend(question) {
     let data = null;
     let lastStatus = null;
-
     for (const url of API_URL_CANDIDATES) {
       try {
-        const res = await fetchWithTimeout(
-          url,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              question,
-              session_id: activeSessionId || getSessionId(),
-            }),
-          },
-          REQUEST_TIMEOUT_MS
-        );
+        const res = await fetchWithTimeout(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ question, session_id: activeSessionId }),
+        }, REQUEST_TIMEOUT_MS);
         lastStatus = res.status;
         if (!res.ok) continue;
         data = await res.json();
-        try {
-          localStorage.setItem(STORAGE_KEY, url);
-        } catch (_) {
-          // Ignore
-        }
+        localStorage.setItem(STORAGE_KEY, url);
         setStatus("เชื่อมต่อแล้ว");
         break;
-      } catch (_) {
-        // Try next URL
-      }
+      } catch (_) {}
     }
-
     if (!data) {
       setStatus("เชื่อมต่อไม่ได้", true);
       throw new Error(`request_failed:${lastStatus || "network"}`);
     }
-
     return data;
   }
 
   async function loadHistory(sessionId) {
-    const sid = sessionId || activeSessionId || getSessionId();
+    const sid = sessionId || activeSessionId;
     const askApi = (localStorage.getItem(STORAGE_KEY) || API_URL_CANDIDATES[0] || "").trim();
     const roots = buildBaseApiCandidates(askApi);
-
     threadEl.innerHTML = "";
 
     for (const root of roots) {
@@ -404,33 +335,22 @@
         const url = `${root.replace(/\/$/, "")}/history/${encodeURIComponent(sid)}`;
         const res = await fetchWithTimeout(url, { method: "GET" }, REQUEST_TIMEOUT_MS);
         if (!res.ok) continue;
-
         const payload = await res.json();
         const turns = Array.isArray(payload.turns) ? payload.turns : [];
-        if (!turns.length) {
-          resetChatUi();
-          return;
-        }
-
+        if (!turns.length) { resetChatUi(); return; }
         for (const turn of turns) {
           appendMessage("user", turn.question || "");
           appendMessage("assistant", turn.answer || "");
         }
         return;
-      } catch (_) {
-        // Try next root
-      }
+      } catch (_) {}
     }
-
     resetChatUi();
   }
 
   function resetChatUi() {
     threadEl.innerHTML = "";
-    appendMessage(
-      "assistant",
-      "สวัสดีครับ ผมเป็นช่างที่ปรึกษาสำหรับช่างหน้างาน\nส่งอาการและข้อมูลที่ตรวจมาแล้วได้เลย เดี๋ยวผมช่วยวางแผนเช็กก่อนซ่อมให้เป็นขั้นตอน"
-    );
+    appendMessage("assistant", "สวัสดีครับ ผมเป็นช่างที่ปรึกษาสำหรับช่างหน้างาน\nส่งอาการและข้อมูลที่ตรวจมาแล้วได้เลย เดี๋ยวผมช่วยวางแผนเช็กก่อนซ่อมให้เป็นขั้นตอน");
   }
 
   function renderQuickPrompts() {
@@ -441,9 +361,14 @@
       btn.className = "prompt-chip";
       btn.textContent = prompt;
       btn.addEventListener("click", () => {
-        inputEl.value = prompt;
-        autoResizeInput();
-        formEl.requestSubmit();
+        if (isIndexPage) {
+          sessionStorage.setItem(PENDING_MSG_KEY, prompt);
+          window.location.href = "chat.html";
+        } else {
+          inputEl.value = prompt;
+          autoResizeInput();
+          formEl.requestSubmit();
+        }
       });
       quickPromptsEl.appendChild(btn);
     }
@@ -451,13 +376,9 @@
 
   async function switchToSession(sessionId) {
     activeSessionId = sessionId;
-    try {
-      localStorage.setItem(SESSION_KEY, sessionId);
-    } catch (_) {
-      // Ignore
-    }
+    localStorage.setItem(SESSION_KEY, sessionId);
     renderChatList();
-    closeSidebarOnMobile(); // ปิดเมนูหลังจากเลือกแชทเสร็จ (ถ้าเล่นมือถืออยู่)
+    closeSidebarOnMobile();
     await loadHistory(sessionId);
   }
 
@@ -465,7 +386,6 @@
     if (isSending) return;
     isSending = true;
     setComposerEnabled(false);
-
     appendMessage("user", question);
     const typingNode = createTypingNode();
     threadEl.appendChild(typingNode);
@@ -480,11 +400,10 @@
     } catch (err) {
       typingNode.remove();
       appendMessage("assistant", "เชื่อมต่อ backend ไม่ได้ กรุณาตรวจสอบว่า backend กำลังรันอยู่");
-      console.error("[AI Service Buddy] ask failed:", err);
     } finally {
       isSending = false;
       setComposerEnabled(true);
-      inputEl.focus();
+      if (window.innerWidth > 900) inputEl.focus();
     }
   }
 
@@ -497,9 +416,15 @@
     const q = inputEl.value.trim();
     if (!q) return;
 
-    inputEl.value = "";
-    autoResizeInput();
-    submitQuestion(q);
+    if (isIndexPage) {
+      // ถ้าอยู่หน้า index ให้ฝากข้อความแล้วย้ายหน้า
+      sessionStorage.setItem(PENDING_MSG_KEY, q);
+      window.location.href = "chat.html";
+    } else {
+      inputEl.value = "";
+      autoResizeInput();
+      submitQuestion(q);
+    }
   });
 
   inputEl.addEventListener("input", autoResizeInput);
@@ -510,14 +435,16 @@
     }
   });
 
-  // ฟังก์ชันเริ่มแชทใหม่ (ใช้ร่วมกันได้หลายปุ่ม)
   function handleNewChat() {
+    // 1. สร้างรหัสแชทใหม่
     activeSessionId = createNewSession();
     ensureSessionInList(activeSessionId);
-    resetChatUi();
-    setStatus("เริ่มแชทใหม่เรียบร้อย");
-    renderChatList();
-    closeSidebarOnMobile();
+    
+    // 2. ล้างข้อความที่อาจจะค้างอยู่
+    sessionStorage.removeItem(PENDING_MSG_KEY);
+
+    // 3. บังคับให้กลับไปหน้า index.html เสมอ
+    window.location.href = "index.html"; 
   }
 
   if (newChatBtnEl) newChatBtnEl.addEventListener("click", handleNewChat);
@@ -532,12 +459,19 @@
   ensureSessionInList(activeSessionId);
   renderChatList();
   renderQuickPrompts();
-  loadHistory(activeSessionId);
-  autoResizeInput();
-  
-  // Focus ที่กล่องพิมพ์เมื่อโหลดเสร็จ ยกเว้นในมือถือ (เพื่อป้องกันคีย์บอร์ดเด้งขึ้นมาเอง)
-  if (window.innerWidth > 900) {
-      inputEl.focus();
+
+  // ลอจิกพิเศษ: ถ้าเปิดหน้า chat.html แล้วมีข้อความฝากไว้ ให้ส่งทันที
+  if (!isIndexPage) {
+    loadHistory(activeSessionId).then(() => {
+        const pending = sessionStorage.getItem(PENDING_MSG_KEY);
+        if (pending) {
+            sessionStorage.removeItem(PENDING_MSG_KEY);
+            submitQuestion(pending);
+        }
+    });
   }
+
+  autoResizeInput();
+  if (window.innerWidth > 900) inputEl.focus();
 
 })();
