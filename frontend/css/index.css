@@ -17,12 +17,21 @@ html {
 
 body {
   margin: 0;
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
   display: flex;
-  flex-direction: column;
-  font-family: "Trebuchet MS", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  flex-direction: row; /* สำคัญมาก! สั่งให้แบ่ง Layout เป็นซ้าย-ขวา */
+  font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
   background-color: var(--bg-color);
   color: var(--text-color);
+}
+
+.neo-shell {
+  display: flex;
+  flex-direction: column; /* ให้เนื้อหาฝั่งขวา (topbar, chat, input) เรียงจากบนลงล่าง */
+  flex-grow: 1;           /* สั่งให้แชทขยายกว้างเต็มพื้นที่จอที่เหลือจาก Sidebar */
+  height: 100%;
+  overflow: hidden;
 }
 
 /* --- แถบด้านบน (Top Bar) --- */
@@ -63,6 +72,7 @@ body {
   display: block;
 }
 
+
 /* --- พื้นที่เนื้อหาหลัก (Main Content Area) --- */
 .main-content {
   flex-grow: 1;
@@ -77,40 +87,42 @@ body {
 /* --- ส่วนโลโก้และพาดหัว (Hero Section) --- */
 .hero-section {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  margin-bottom: 50px;
+  margin-top: 25vh; /* ดันโลโก้ลงมาจากขอบบน (ปรับตัวเลข 15 ให้มาก/น้อยได้ตามชอบ) */
+  margin-bottom: 20px; /* ระยะห่างระหว่างโลโก้กับข้อความทักทาย */
+  flex-shrink: 0;
 }
 
 .hero-logo {
-  width: 300px;
-  margin-bottom: 10px;
-}
-
-.hero-title {
-  margin: 0 0 20px;
-  font-size: 32px;
-  font-weight: 700;
-  color: var(--brand-color);
+  width: 320px; 
+  max-width: 80%;
+  height: auto;
 }
 
 .neo-thread {
   margin: 0;
   font-size: 16px;
   color: var(--desc-text-color);
-  text-align: center;
   line-height: 1.6;
-  max-width: 600px;
-}
+  flex-grow: 1;
+  overflow-y: auto; /* ถ้าแชทยาวให้เลื่อนขึ้นได้ */
+  display: flex;
+  flex-direction: column;
+  text-align: center; 
 
+  max-width: 50%;     /* บีบความกว้างไม่ให้ข้อความยาวทะลุขอบ */
+  margin-left: auto;    /* จัดให้อยู่ตรงกลางจอ */
+  margin-right: auto;
+  line-height: 1.6;     /* เว้นระยะบรรทัดให้อ่านง่าย */
+}
 
 /*-----------แถบด้านล่าง(คำถามแนะนำ+ช่องพิมพ์)---------- */
 .neo-main {
-  position: fixed;
-  bottom: 0;       /* สั่งให้ชิดขอบล่าง 0 พิกเซล */
-  width: 100%;     /* ให้กว้างเต็มจอ */
-  padding: 20px;
-  background-color: transparent; /* ใส่สีพื้นหลังกันเนื้อหาข้างล่างทะลุ */
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;     /* สำคัญมาก: ล็อคไม่ให้คอนเทนต์ในนี้ทะลุกรอบ */
 }
 
   /* ----- คำถามแนะนำ----- */
@@ -209,4 +221,137 @@ body {
 /*-------------------------------------------------- */
 
 
+/* ================= Sidebar Styles ================= */
+.neo-sidebar {
+  width: 260px;
+  background-color: #FFFFFF;
+  border-right: 1px solid #eaeaea;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  transition: all 0.3s ease; /* ทำให้ตอนเปิด/ปิด มีแอนิเมชันสมูทๆ */
+  z-index: 1000;
+  overflow: hidden;
+}
 
+/* สไตล์ด้านใน Sidebar */
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px;
+}
+
+.logo-sidebar{
+  margin-top: 15%;
+  width: 160px;   /* กำหนดความกว้างที่ต้องการ */
+  height: auto;  /* สั่งให้ความสูงปรับตามอัตโนมัติ รูปจะไม่ยืด/หดผิดรูป */
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+}
+
+.sidebar-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 20px;
+  padding: 10px;
+  background: transparent;
+  border: none;
+  transition: background 0.2s;
+
+  margin-top: 0.85rem;
+  text-align: left;
+  background: #FFFFFF;
+  color: #575757;
+  font-size: 17px;
+  padding: 0.8rem 0.9rem;
+  cursor: pointer;
+  border-radius: 10px;
+  outline: none;
+  box-shadow: none;
+  appearance: none;
+  -webkit-appearance: none;
+
+  /* newchat icon */
+  display: flex;          
+  align-items: center;  
+  gap: 0.5rem;
+
+}
+
+.sidebar-action-btn:hover {
+  background: #f5f5f5;
+}
+
+.sidebar-section {
+  padding: 20px;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.sidebar-section-title {
+  margin: 0 0 15px 0;
+  font-size: 15px;
+  color: #666;
+  font-weight: 600;
+}
+
+.drawer-backdrop {
+  display: none;
+}
+
+/* ================= Responsive & Toggle Classes ================= */
+
+/* กรณีจอคอม (ซ่อน Sidebar เมื่อโดนสั่งปิด) */
+@media (min-width: 981px) {
+  body.sidebar-closed .neo-sidebar {
+    width: 0;
+    border: none;
+    padding: 0;
+  }
+  .close-btn {
+    display: none; /* จอคอมไม่ต้องมีปุ่มกากบาท ให้ปิดที่ Hamburger แทน */
+  }
+}
+
+/* กรณีจอมือถือ/แท็บเล็ต (แสดง Sidebar แบบทับหน้าจอ) */
+@media (max-width: 980px) {
+  .neo-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 280px;
+    transform: translateX(-100%); /* ซ่อนไว้ทางซ้ายก่อน */
+  }
+
+  /* เมื่อคลาส sidebar-open ทำงาน จะเลื่อน Sidebar ออกมา */
+  body.sidebar-open .neo-sidebar {
+    transform: translateX(0);
+  }
+
+  /* ม่านดำหลัง Sidebar ตอนเปิดในมือถือ */
+  .drawer-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  body.sidebar-open .drawer-backdrop {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

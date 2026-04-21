@@ -7,6 +7,30 @@
   <link rel="stylesheet" href="/css/chat.css?v=20260412b" />
 </head>
 <body class="neo-chat-page">
+  <aside id="sidebar" class="neo-sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <img src="assets/logo.svg" alt="ISUZU" class="hero-logo" />
+      </div>
+      <button id="closeSidebarBtn" class="close-btn" type="button">✕</button>
+    </div>
+
+    <button id="sidebarNewChatBtn" class="sidebar-action-btn">
+      <img src="assets/newchat.svg" width="20" alt="New Chat" /> 
+      <span>เริ่มแชทใหม่</span>
+    </button>
+
+    <div class="sidebar-section">
+      <h3 class="sidebar-section-title">แชทล่าสุด</h3>
+      <div id="chatHistoryList" class="history-list">
+        </div>
+    </div>
+  </aside>
+
+  <div id="sidebarBackdrop" class="drawer-backdrop"></div>
+
+
+
   <div class="neo-shell">
     <div class="top-bar">
         <div class="top-bar-icons"> 
@@ -39,9 +63,6 @@
   </div>
 
   <!-- กล่องซ่อน" (Dummy) สำหรับ Element ที่คุณไม่ได้ใช้ในหน้านี้แล้ว เพื่อหลอกให้ JavaScript ทำงานผ่านไปได้โดยไม่ Error ครับ -->
-  <div id="sidebar" style="display:none;"></div>
-  <div id="sidebarBackdrop" style="display:none;"></div>
-  <div id="chatHistoryList" style="display:none;"></div>
   <div id="apiStatus" style="display:none;"></div>
   <!------------------------------------------------------------------------------------------------------->
 

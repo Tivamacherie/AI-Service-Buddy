@@ -4,7 +4,6 @@
   const SESSION_KEY = "AI_SERVICE_BUDDY_SESSION_ID";
   const CHAT_LIST_KEY = "AI_SERVICE_BUDDY_CHAT_LIST";
   const MAX_INPUT_HEIGHT = 180;
-  
 
   function buildAskApiCandidates() {
     const candidates = [];
@@ -14,7 +13,9 @@
     if (fromWindow) candidates.push(fromWindow);
     if (fromStorage) candidates.push(fromStorage);
 
-    const isHttpPage = window.location.protocol === "http:" || window.location.protocol === "https:";
+    const isHttpPage =
+      window.location.protocol === "http:" ||
+      window.location.protocol === "https:";
     if (isHttpPage) {
       candidates.push(`${window.location.origin}/ask`);
       candidates.push("/ask");
@@ -36,6 +37,8 @@
   }
 
   const API_URL_CANDIDATES = buildAskApiCandidates();
+
+  // --- Element Selectors ---
   const sidebarEl = document.getElementById("sidebar");
   const sidebarBackdropEl = document.getElementById("sidebarBackdrop");
   const threadEl = document.getElementById("chatThread");
@@ -43,11 +46,26 @@
   const formEl = document.getElementById("composerForm");
   const inputEl = document.getElementById("chatInput");
   const sendBtnEl = document.getElementById("sendBtn");
-  const newChatBtnEl = document.getElementById("newChatBtn");
   const chatHistoryListEl = document.getElementById("chatHistoryList");
   const apiStatusEl = document.getElementById("apiStatus");
 
-  if (!sidebarEl || !sidebarBackdropEl || !threadEl || !quickPromptsEl || !formEl || !inputEl || !sendBtnEl || !newChatBtnEl || !chatHistoryListEl || !apiStatusEl) {
+  // ปุ่มที่เพิ่มเข้ามาใหม่สำหรับ Sidebar
+  const hamburgerBtn = document.getElementById("hamburgerBtn");
+  const closeSidebarBtn = document.getElementById("closeSidebarBtn");
+  const newChatBtnEl = document.getElementById("newChatBtn"); // ปุ่ม top-bar
+  const sidebarNewChatBtn = document.getElementById("sidebarNewChatBtn"); // ปุ่มใน sidebar
+
+  if (
+    !sidebarEl ||
+    !sidebarBackdropEl ||
+    !threadEl ||
+    !quickPromptsEl ||
+    !formEl ||
+    !inputEl ||
+    !sendBtnEl ||
+    !chatHistoryListEl
+  ) {
+    console.error("Missing critical DOM elements!");
     return;
   }
 
@@ -61,6 +79,53 @@
     "รถสั่นตอนออกตัว เกิดจากอะไร",
     "เบรกแล้วมีเสียงดัง ต้องเช็คอะไร",
   ];
+
+  // ==========================================
+  // Sidebar Toggle System (ระบบเปิด-ปิดเมนูซ้าย)
+  // ==========================================
+  const body = document.body;
+
+  function toggleSidebar() {
+    if (window.innerWidth > 980) {
+      // หน้าจอใหญ่ (PC): พับ/ขยาย Sidebar
+      body.classList.toggle("sidebar-closed");
+    } else {
+      // หน้าจอเล็ก (Mobile): สไลด์ Sidebar เข้า/ออก
+      body.classList.toggle("sidebar-open");
+    }
+  }
+
+  function closeSidebarOnMobile() {
+    if (window.innerWidth <= 980) {
+      body.classList.remove("sidebar-open");
+    }
+  }
+
+  // ผูก Event ให้ปุ่ม Hamburger
+  if (hamburgerBtn) {
+    hamburgerBtn.addEventListener("click", toggleSidebar);
+  }
+
+  // ผูก Event ให้ปุ่ม X ใน Sidebar (โชว์เฉพาะมือถือ)
+  if (closeSidebarBtn) {
+    closeSidebarBtn.addEventListener("click", closeSidebarOnMobile);
+  }
+
+  // ปิด Sidebar เมื่อกดที่พื้นหลังดำ (เฉพาะมือถือ)
+  if (sidebarBackdropEl) {
+    sidebarBackdropEl.addEventListener("click", closeSidebarOnMobile);
+  }
+
+  // จัดการเวลาผู้ใช้ย่อ/ขยายหน้าต่างเบราว์เซอร์
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 980) {
+      body.classList.remove("sidebar-open"); // ลบคลาสของมือถือทิ้ง
+    }
+  });
+
+  // ==========================================
+  // Chat History & Sessions
+  // ==========================================
 
   function getChatList() {
     try {
@@ -78,7 +143,7 @@
     try {
       localStorage.setItem(CHAT_LIST_KEY, JSON.stringify(chatList));
     } catch (_) {
-      // Ignore storage errors.
+      // Ignore
     }
   }
 
@@ -110,7 +175,10 @@
         ...current,
         preview: item.preview,
         updatedAt: now,
-        title: current.title && current.title !== "แชทใหม่" ? current.title : item.title,
+        title:
+          current.title && current.title !== "แชทใหม่"
+            ? current.title
+            : item.title,
       };
     } else {
       chatList.unshift(item);
@@ -139,29 +207,43 @@
       const empty = document.createElement("p");
       empty.className = "history-item-preview";
       empty.textContent = "ยังไม่มีประวัติแชท";
+      empty.style.padding = "0 20px";
       chatHistoryListEl.appendChild(empty);
       return;
     }
 
+    // สร้างสไตล์ชั่วคราวให้ประวัติแชทดูดีขึ้น (คุณสามารถย้ายไปไว้ใน chat.css ได้)
+    const btnStyle = `
+      width: 100%; text-align: left; padding: 10px 15px; margin-bottom: 5px; 
+      border: none; background: transparent; border-radius: 8px; cursor: pointer; transition: background 0.2s;
+    `;
+
     for (const item of chatList) {
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.className = `history-item${item.id === activeSessionId ? " active" : ""}`;
-      btn.dataset.sessionId = item.id;
+      // ถ้าเป็นห้องปัจจุบัน ให้พื้นหลังเป็นสีเทาอ่อน
+      const isActive = item.id === activeSessionId;
+      btn.style.cssText = btnStyle + (isActive ? "background: #f0f0f0;" : "");
+      
+      // Hover Effect
+      btn.onmouseover = () => { if (!isActive) btn.style.background = "#fafafa"; };
+      btn.onmouseout = () => { if (!isActive) btn.style.background = "transparent"; };
 
-      const title = document.createElement("p");
-      title.className = "history-item-title";
+      const title = document.createElement("div");
+      title.style.cssText = "font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
       title.textContent = item.title || "แชทใหม่";
 
-      const preview = document.createElement("p");
-      preview.className = "history-item-preview";
+      const preview = document.createElement("div");
+      preview.style.cssText = "font-size: 12px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;";
       preview.textContent = item.preview || "ยังไม่มีข้อความ";
 
       btn.appendChild(title);
       btn.appendChild(preview);
+
       btn.addEventListener("click", async () => {
         await switchToSession(item.id);
       });
+
       chatHistoryListEl.appendChild(btn);
     }
   }
@@ -171,7 +253,9 @@
     try {
       sid = (localStorage.getItem(SESSION_KEY) || "").trim();
       if (!sid) {
-        sid = (window.crypto && window.crypto.randomUUID && window.crypto.randomUUID()) || `${Date.now()}`;
+        sid =
+          (window.crypto && window.crypto.randomUUID && window.crypto.randomUUID()) ||
+          `${Date.now()}`;
         localStorage.setItem(SESSION_KEY, sid);
       }
     } catch (_) {
@@ -181,32 +265,26 @@
   }
 
   function createNewSession() {
-    const sid = (window.crypto && window.crypto.randomUUID && window.crypto.randomUUID()) || `${Date.now()}`;
+    const sid =
+      (window.crypto && window.crypto.randomUUID && window.crypto.randomUUID()) ||
+      `${Date.now()}`;
     try {
       localStorage.setItem(SESSION_KEY, sid);
     } catch (_) {
-      // Ignore storage errors.
+      // Ignore
     }
     return sid;
   }
 
   function setStatus(text, isError = false) {
+    if(!apiStatusEl) return;
     apiStatusEl.textContent = text;
     apiStatusEl.classList.toggle("is-error", isError);
   }
 
-  function closeSidebarOnMobile() {
-    if (window.innerWidth <= 900) {
-      sidebarEl.classList.remove("open");
-      sidebarBackdropEl.classList.remove("show");
-    }
-  }
-
-  function setSidebarOpen(open) {
-    if (window.innerWidth > 900) return;
-    sidebarEl.classList.toggle("open", open);
-    sidebarBackdropEl.classList.toggle("show", open);
-  }
+  // ==========================================
+  // Chat UI Functions
+  // ==========================================
 
   function scrollToBottom() {
     threadEl.scrollTop = threadEl.scrollHeight;
@@ -259,6 +337,10 @@
     inputEl.style.height = `${Math.min(inputEl.scrollHeight, MAX_INPUT_HEIGHT)}px`;
   }
 
+  // ==========================================
+  // API & Fetch System
+  // ==========================================
+
   async function fetchWithTimeout(url, options, timeoutMs) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -293,12 +375,12 @@
         try {
           localStorage.setItem(STORAGE_KEY, url);
         } catch (_) {
-          // Ignore storage errors.
+          // Ignore
         }
         setStatus("เชื่อมต่อแล้ว");
         break;
       } catch (_) {
-        // Try next URL.
+        // Try next URL
       }
     }
 
@@ -336,7 +418,7 @@
         }
         return;
       } catch (_) {
-        // Try next root.
+        // Try next root
       }
     }
 
@@ -372,10 +454,10 @@
     try {
       localStorage.setItem(SESSION_KEY, sessionId);
     } catch (_) {
-      // Ignore storage errors.
+      // Ignore
     }
     renderChatList();
-    closeSidebarOnMobile();
+    closeSidebarOnMobile(); // ปิดเมนูหลังจากเลือกแชทเสร็จ (ถ้าเล่นมือถืออยู่)
     await loadHistory(sessionId);
   }
 
@@ -406,6 +488,10 @@
     }
   }
 
+  // ==========================================
+  // Event Listeners
+  // ==========================================
+
   formEl.addEventListener("submit", (e) => {
     e.preventDefault();
     const q = inputEl.value.trim();
@@ -424,26 +510,23 @@
     }
   });
 
-  newChatBtnEl.addEventListener("click", () => {
+  // ฟังก์ชันเริ่มแชทใหม่ (ใช้ร่วมกันได้หลายปุ่ม)
+  function handleNewChat() {
     activeSessionId = createNewSession();
     ensureSessionInList(activeSessionId);
     resetChatUi();
     setStatus("เริ่มแชทใหม่เรียบร้อย");
     renderChatList();
     closeSidebarOnMobile();
-  });
+  }
 
-  sidebarBackdropEl.addEventListener("click", () => {
-    setSidebarOpen(false);
-  });
+  if (newChatBtnEl) newChatBtnEl.addEventListener("click", handleNewChat);
+  if (sidebarNewChatBtn) sidebarNewChatBtn.addEventListener("click", handleNewChat);
 
-  window.addEventListener("resize", () => {
-    if (window.innerWidth > 900) {
-      sidebarEl.classList.remove("open");
-      sidebarBackdropEl.classList.remove("show");
-    }
-  });
-
+  // ==========================================
+  // Initialization
+  // ==========================================
+  
   chatList = getChatList();
   activeSessionId = getSessionId();
   ensureSessionInList(activeSessionId);
@@ -451,5 +534,10 @@
   renderQuickPrompts();
   loadHistory(activeSessionId);
   autoResizeInput();
-  inputEl.focus();
+  
+  // Focus ที่กล่องพิมพ์เมื่อโหลดเสร็จ ยกเว้นในมือถือ (เพื่อป้องกันคีย์บอร์ดเด้งขึ้นมาเอง)
+  if (window.innerWidth > 900) {
+      inputEl.focus();
+  }
+
 })();
