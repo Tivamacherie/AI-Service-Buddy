@@ -1,3 +1,21 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+:root {
+  --brand-color: #A31E19; /* สีแดงเข้ม (Maroon) ของ ISUZU */
+  --text-color: #A31E19;
+  --desc-text-color: #666;
+  --bg-color: #FFFFFF;
+  --input-bg-color: #F2F2F2;
+  --chip-border-color: #A31E19;
+}
+
+
 /* Splash */
 /* --- 1. การตั้งค่าพื้นฐาน (Base Styles) --- */
 body.center.splash-page {
