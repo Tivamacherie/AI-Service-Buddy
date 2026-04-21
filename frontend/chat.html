@@ -4,28 +4,25 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AI Service Buddy</title>
-  <link rel="stylesheet" href="/css/index.css?v=20260412b" />
+  <link rel="stylesheet" href="/css/chat.css?v=20260412b" />
 </head>
-<body class="home-page">
-  <div class="top-bar">
-    <div class="top-bar-icons"> 
-        <button id="hamburgerBtn" class="hamburger-btn" type="button">
-        <img src="assets/hamburger.svg" width="30" /> </button>
+<body class="neo-chat-page">
+  <div class="neo-shell">
+    <div class="top-bar">
+        <div class="top-bar-icons"> 
+            <button id="hamburgerBtn" class="hamburger-btn" type="button">
+            <img src="assets/hamburger.svg" width="30" /> </button>
 
-        <button id="newChatBtn" class="new-btn" type="button">
-          <img src="assets/newchat.svg" width="27" />
-        </button>
+            <button id="newChatBtn" class="new-btn" type="button">
+            <img src="assets/newchat.svg" width="27" />
+            </button>
+        </div>
+        <h1 class="top-bar-text">AI Service Buddy</h1> 
     </div>
-    <h1 class="top-bar-text">AI Service Buddy</h1> </div>
-
-  <div class="main-content"> 
-    <div class="hero-section">
-        <img src="assets/logo.svg" alt="ISUZU" class="hero-logo" />
-        <section id="chatThread" class="neo-thread" aria-live="polite"></section>
-    </div>
- 
 
     <main class="neo-main">
+      <section id="chatThread" class="neo-thread" aria-live="polite"></section>
+
       <div id="quickPrompts" class="neo-prompts" aria-label="คำถามแนะนำ"></div>
 
       <form id="composerForm" class="neo-composer" autocomplete="off">
@@ -39,7 +36,6 @@
         <button id="sendBtn" class="neo-send" type="submit">ส่ง</button>
       </form>
     </main>
-
   </div>
 
   <!-- กล่องซ่อน" (Dummy) สำหรับ Element ที่คุณไม่ได้ใช้ในหน้านี้แล้ว เพื่อหลอกให้ JavaScript ทำงานผ่านไปได้โดยไม่ Error ครับ -->
