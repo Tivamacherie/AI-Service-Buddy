@@ -365,6 +365,9 @@ body {
 }
 
 .sidebar-action-btn {
+  position: sticky;
+  top: 0;           /* แปะไว้บนสุดของพื้นที่ */
+  z-index: 10;      /* ให้ลอยทับประวัติแชทเวลาเลื่อน */
   display: flex;
   align-items: center;
   gap: 12px;
