@@ -223,7 +223,7 @@ body {
 
 /* ================= Sidebar Styles ================= */
 .neo-sidebar {
-  width: 260px;
+  width: 288px;
   background-color: #FFFFFF;
   border-right: 1px solid #eaeaea;
   display: flex;
@@ -297,6 +297,15 @@ body {
   overflow-y: auto;
 }
 
+.sidebar-section-top-searches {
+  flex-grow: 0;
+}
+
+.sidebar-section + .sidebar-section {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  padding-top: 16px;
+}
+
 .sidebar-section-title {
   margin: 0 0 15px 0;
   font-size: 15px;
@@ -329,7 +338,7 @@ body {
     top: 0;
     bottom: 0;
     left: 0;
-    width: 280px;
+    width: 300px;
     transform: translateX(-100%); /* ซ่อนไว้ทางซ้ายก่อน */
   }
 

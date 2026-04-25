@@ -9,6 +9,29 @@ from typing import List, Dict
 
 _DB_LOCK = threading.Lock()
 TERM_PATTERN = re.compile(r"[0-9a-zA-Zก-๙]+")
+LEADING_NOISE_PATTERN = re.compile(
+    r"^(?:อาการ|ปัญหา|เรื่อง|กรณี|ช่วยดู|ช่วยเช็ค|ช่วยวิเคราะห์|รถ|รถยนต์)+",
+    re.IGNORECASE,
+)
+KEYWORD_STOPWORDS = {
+    "ครับ",
+    "ค่ะ",
+    "คับ",
+    "หน่อย",
+    "ที",
+    "หน่อยครับ",
+    "หน่อยค่ะ",
+    "ช่วย",
+    "ช่วยดู",
+    "ช่วยเช็ค",
+    "ช่วยวิเคราะห์",
+    "รบกวน",
+    "please",
+    "help",
+    "check",
+    "analyze",
+    "analysis",
+}
 
 
 def _db_path() -> Path:
@@ -43,23 +66,81 @@ def init_db() -> None:
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_chat_question ON chat_turns(question)"
             )
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS top_search_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    session_id TEXT NOT NULL,
+                    keyword TEXT NOT NULL,
+                    keyword_norm TEXT NOT NULL,
+                    question TEXT NOT NULL,
+                    created_at INTEGER NOT NULL
+                )
+                """
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_top_search_keyword_time ON top_search_events(keyword_norm, created_at DESC)"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_top_search_session_time ON top_search_events(session_id, created_at DESC)"
+            )
             conn.commit()
         finally:
             conn.close()
 
 
 def save_chat_turn(session_id: str, question: str, answer: str, source: str = "cloud-llm") -> None:
-    if not session_id.strip() or not question.strip() or not answer.strip():
+    sid = session_id.strip()
+    q = question.strip()
+    a = answer.strip()
+    if not sid or not q or not a:
         return
+
+    keyword = _extract_symptom_keyword(q)
+    keyword_norm = _normalize_text(keyword)
+    created_at = int(time.time())
 
     with _DB_LOCK:
         conn = sqlite3.connect(_db_path())
         try:
             conn.execute(
                 "INSERT INTO chat_turns(session_id, question, answer, source, created_at) VALUES(?, ?, ?, ?, ?)",
-                (session_id.strip(), question.strip(), answer.strip(), source.strip(), int(time.time())),
+                (sid, q, a, source.strip(), created_at),
             )
+            if keyword and keyword_norm:
+                conn.execute(
+                    "INSERT INTO top_search_events(session_id, keyword, keyword_norm, question, created_at) VALUES(?, ?, ?, ?, ?)",
+                    (sid, keyword, keyword_norm, q, created_at),
+                )
             conn.commit()
+        finally:
+            conn.close()
+
+
+def delete_chat_session(session_id: str) -> int:
+    sid = session_id.strip()
+    if not sid:
+        return 0
+
+    with _DB_LOCK:
+        conn = sqlite3.connect(_db_path())
+        try:
+            cur = conn.execute("DELETE FROM chat_turns WHERE session_id = ?", (sid,))
+            conn.execute("DELETE FROM top_search_events WHERE session_id = ?", (sid,))
+            conn.commit()
+            return int(cur.rowcount or 0)
+        finally:
+            conn.close()
+
+
+def clear_chat_history() -> int:
+    with _DB_LOCK:
+        conn = sqlite3.connect(_db_path())
+        try:
+            cur = conn.execute("DELETE FROM chat_turns")
+            conn.execute("DELETE FROM top_search_events")
+            conn.commit()
+            return int(cur.rowcount or 0)
         finally:
             conn.close()
 
@@ -119,6 +200,154 @@ def get_similar_qa(question: str, limit: int = 3) -> List[Dict[str, str]]:
             conn.close()
 
     return [{"question": r["question"], "answer": r["answer"]} for r in rows]
+
+
+def get_top_searches(limit: int = 5) -> List[Dict[str, object]]:
+    n = max(1, min(limit, 10))
+
+    with _DB_LOCK:
+        conn = sqlite3.connect(_db_path())
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                """
+                SELECT keyword, keyword_norm, created_at
+                FROM top_search_events
+                WHERE TRIM(keyword_norm) != ''
+                ORDER BY created_at DESC, id DESC
+                LIMIT 3000
+                """,
+            ).fetchall()
+        finally:
+            conn.close()
+
+    aggregated: dict[str, dict[str, object]] = {}
+    for row in rows:
+        keyword = (row["keyword"] or "").strip()
+        normalized = (row["keyword_norm"] or "").strip()
+        if not keyword or not normalized:
+            continue
+
+        entry = aggregated.get(normalized)
+        if not entry:
+            aggregated[normalized] = {
+                "keyword": keyword,
+                "count": 1,
+                "latest_at": int(row["created_at"] or 0),
+            }
+            continue
+
+        entry["count"] = int(entry["count"]) + 1
+        entry["latest_at"] = max(int(entry["latest_at"]), int(row["created_at"] or 0))
+
+    ranked = sorted(
+        aggregated.values(),
+        key=lambda x: (-int(x["count"]), -int(x["latest_at"]), str(x["keyword"])),
+    )[:n]
+
+    return [
+        {
+            "question": str(item["keyword"]),
+            "keyword": str(item["keyword"]),
+            "count": int(item["count"]),
+        }
+        for item in ranked
+    ]
+
+
+def get_top_search_sources(keyword: str, limit: int = 20) -> List[Dict[str, object]]:
+    n = max(1, min(limit, 50))
+    target_keyword = _extract_symptom_keyword(keyword)
+    target_normalized = _normalize_text(target_keyword)
+    if not target_normalized:
+        return []
+
+    with _DB_LOCK:
+        conn = sqlite3.connect(_db_path())
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                """
+                SELECT session_id, question, created_at
+                FROM top_search_events
+                WHERE keyword_norm = ?
+                ORDER BY created_at DESC, id DESC
+                LIMIT 5000
+                """,
+                (target_normalized,),
+            ).fetchall()
+        finally:
+            conn.close()
+
+    aggregated: dict[str, dict[str, object]] = {}
+    for row in rows:
+        session_id = (row["session_id"] or "").strip()
+        if not session_id:
+            continue
+
+        entry = aggregated.get(session_id)
+        if not entry:
+            aggregated[session_id] = {
+                "session_id": session_id,
+                "count": 1,
+                "latest_at": int(row["created_at"] or 0),
+                "latest_question": (row["question"] or "").strip(),
+            }
+            continue
+
+        entry["count"] = int(entry["count"]) + 1
+        current_time = int(row["created_at"] or 0)
+        if current_time >= int(entry["latest_at"]):
+            entry["latest_at"] = current_time
+            entry["latest_question"] = (row["question"] or "").strip()
+
+    ranked = sorted(
+        aggregated.values(),
+        key=lambda x: (-int(x["count"]), -int(x["latest_at"]), str(x["session_id"])),
+    )[:n]
+
+    return [
+        {
+            "session_id": str(item["session_id"]),
+            "count": int(item["count"]),
+            "latest_at": int(item["latest_at"]),
+            "latest_question": str(item["latest_question"]),
+        }
+        for item in ranked
+    ]
+
+
+def _cleanup_keyword_chunk(text: str) -> str:
+    cleaned = LEADING_NOISE_PATTERN.sub("", text.strip())
+    return cleaned.strip(" -_.,:;!?()[]{}\"'“”’`~")
+
+
+def _extract_symptom_keyword(question: str) -> str:
+    normalized = " ".join((question or "").strip().split())
+    if not normalized:
+        return ""
+
+    chunks = [part.strip() for part in re.split(r"[,/|]+", normalized) if part.strip()]
+    if not chunks:
+        chunks = [normalized]
+
+    for chunk in chunks:
+        candidate = _cleanup_keyword_chunk(chunk)
+        if not candidate:
+            continue
+        lowered = candidate.lower()
+        if lowered in KEYWORD_STOPWORDS:
+            continue
+        if len(candidate) < 3:
+            continue
+        return candidate
+
+    fallback = _cleanup_keyword_chunk(normalized)
+    if not fallback:
+        return ""
+    if fallback.lower() in KEYWORD_STOPWORDS:
+        return ""
+    return fallback
 
 
 def _normalize_text(text: str) -> str:

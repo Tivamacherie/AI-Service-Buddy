@@ -80,6 +80,14 @@ CLOUD_LLM_MODEL=openai/gpt-4.1-mini
 	- ส่ง `force_fresh=true` ได้ เมื่อต้องการบังคับให้เรียกโมเดลใหม่ ไม่ reuse memory
 - `GET /history/<session_id>`
 	- ดึงประวัติ chat ของ session
+- `DELETE /history/<session_id>`
+	- ลบประวัติ chat ทั้งหมดของ session นั้น
+- `DELETE /history`
+	- ลบประวัติ chat ทั้งหมดทุก session
+- `GET /top-searches?limit=5`
+	- ดึงรายการคีย์เวิร์ดอาการที่ถูกถามบ่อยที่สุด (สกัดจากข้อความคำถาม)
+- `GET /top-searches/sources?keyword=<keyword>&limit=20`
+	- ดึงรายการ session ที่มีคีย์เวิร์ดอาการนั้น พร้อมจำนวนครั้งที่พบ
 
 ## Deploy ขึ้น Cloud
 โปรเจกต์มี [Dockerfile](Dockerfile) พร้อม deploy
