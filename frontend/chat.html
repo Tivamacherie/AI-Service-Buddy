@@ -19,10 +19,10 @@
       <span>เริ่มแชทใหม่</span>
     </button>
 
-    <div class="sidebar-section sidebar-section-top-searches">
-      <h3 class="sidebar-section-title">ค้นหายอดฮิต</h3>
-      <div id="topSearchesList" class="history-list"></div>
-    </div>
+    <button id="topSearchesBtn" class="sidebar-action-btn">
+      <img src="assets/trending.svg" width="20" /> 
+      <span>ค้นหายอดฮิต</span>
+    </button>
 
     <div class="sidebar-section">
       <h3 class="sidebar-section-title">แชทล่าสุด</h3>
@@ -49,6 +49,13 @@
     </div>
 
     <main class="neo-main">
+      <section id="topSearchesList" class="top-searches-view history-list" aria-label="ค้นหายอดฮิต" hidden>
+        <div class="top-searches-view-header">
+          <h2>ค้นหายอดฮิต</h2>
+          <p>เลือกหัวข้อที่อยากดูในหน้าหลัก</p>
+        </div>
+      </section>
+
       <section id="chatThread" class="neo-thread" aria-live="polite"></section>
 
       <div id="quickPrompts" class="neo-prompts" aria-label="คำถามแนะนำ"></div>

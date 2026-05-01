@@ -5,6 +5,7 @@
   const CHAT_LIST_KEY = "AI_SERVICE_BUDDY_CHAT_LIST";
   const PENDING_MSG_KEY = "AI_SERVICE_BUDDY_PENDING_MSG"; // คีย์สำหรับฝากข้อความข้ามหน้า
   const TOP_SEARCH_KEYWORD_KEY = "AI_SERVICE_BUDDY_TOP_SEARCH_KEYWORD";
+  const TOP_SEARCH_OPEN_KEY = "AI_SERVICE_BUDDY_TOP_SEARCH_OPEN";
   const MAX_INPUT_HEIGHT = 180;
 
   function buildAskApiCandidates() {
@@ -56,7 +57,12 @@
   const closeSidebarBtn = document.getElementById("closeSidebarBtn");
   const newChatBtnEl = document.getElementById("newChatBtn");
   const sidebarNewChatBtn = document.getElementById("sidebarNewChatBtn");
+  const topSearchesBtn = document.getElementById("topSearchesBtn");
 
+  // Panel visibility state
+  let topSearchPanelVisible = false;
+
+  // `topSearchesListEl` is optional on index/chat pages; don't abort if missing
   if (
     !sidebarEl ||
     !sidebarBackdropEl ||
@@ -65,7 +71,6 @@
     !formEl ||
     !inputEl ||
     !sendBtnEl ||
-    !topSearchesListEl ||
     !chatHistoryListEl
   ) {
     console.error("Missing critical DOM elements!");
@@ -88,6 +93,7 @@
 
   // เช็คว่าอยู่หน้า index หรือไม่
   const isIndexPage = window.location.pathname.includes('index.html') || window.location.pathname.endsWith('/');
+  const isHotSearchPage = window.location.pathname.includes('hotsearch.html');
 
   // ==========================================
   // Sidebar Toggle System
@@ -154,7 +160,13 @@
   function setTopSearchViewMode(enabled) {
     isTopSearchMode = Boolean(enabled);
     if (quickPromptsEl) quickPromptsEl.style.display = isTopSearchMode ? "none" : "";
-    if (formEl) formEl.style.display = isTopSearchMode ? "none" : "";
+    if (topSearchesListEl) topSearchesListEl.hidden = !isTopSearchMode;
+
+    // In hotsearch page, hide chat area and composer while showing top-search content.
+    if (isHotSearchPage) {
+      if (threadEl) threadEl.style.display = isTopSearchMode ? "none" : "";
+      if (formEl) formEl.style.display = isTopSearchMode ? "none" : "";
+    }
   }
 
   function titleFromSessionId(sessionId) {
@@ -239,7 +251,7 @@
       delBtn.type = "button";
       delBtn.setAttribute("aria-label", "ลบประวัติแชท");
       delBtn.title = "ลบประวัติแชท";
-      delBtn.style.cssText = "width: 30px; min-width: 30px; height: 30px; align-self: center; border: 1px solid #ecd6d6; background: #fff; color: #bf4a4a; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0;";
+      delBtn.style.cssText = "width: 30px; min-width: 30px; height: 30px; align-self: center; border: none; background: transparent; color: #bf4a4a; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; padding: 0;";
       delBtn.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9 3h6l1 2h4v2H4V5h4l1-2Zm1 6h2v8h-2V9Zm4 0h2v8h-2V9ZM7 9h2v8H7V9Zm-1 12h12a2 2 0 0 0 2-2V8H4v11a2 2 0 0 0 2 2Z"/></svg>';
       delBtn.addEventListener("click", async (e) => {
         e.preventDefault();
@@ -303,14 +315,15 @@
   }
 
   function renderTopSearches(items) {
+    if (!topSearchesListEl) return; // ถ้าหน้าไหนไม่มี ID นี้ก็จะไม่รัน    
     topSearchesListEl.innerHTML = "";
-    if (!items.length) {
-      const empty = document.createElement("p");
-      empty.className = "history-item-preview";
-      empty.textContent = "ยังไม่มีข้อมูลค้นหายอดฮิต";
-      empty.style.padding = "0 20px";
-      topSearchesListEl.appendChild(empty);
-      return;
+ 
+    // สร้างหัวข้อใหญ่ในหน้า Hot Search
+    if (isHotSearchPage) {
+        const headline = document.createElement("h2");
+        headline.textContent = "รายการค้นหายอดฮิต";
+        headline.style.margin = "20px 0";
+        topSearchesListEl.appendChild(headline);
     }
 
     const btnStyle = `width: 100%; text-align: left; padding: 10px 15px; margin-bottom: 5px; border: none; background: transparent; border-radius: 8px; cursor: pointer; transition: background 0.2s;`;
@@ -359,30 +372,8 @@
     const q = (keyword || "").trim();
     threadEl.innerHTML = "";
 
-    appendMessage("assistant", `ผลการค้นหายอดฮิต: ${q || "ไม่ระบุคีย์เวิร์ด"}`);
-
     if (!q || !sessions.length) {
-      appendMessage("assistant", "ไม่พบแชทที่เคยค้นหาด้วยคีย์เวิร์ดนี้");
-      return;
-    }
-
-    for (const item of sessions) {
-      const sessionId = (item.session_id || "").trim();
-      const title = titleFromSessionId(sessionId);
-      const countText = `พบคีย์เวิร์ดนี้ ${Number(item.count || 0).toLocaleString()} ครั้ง`;
-      const latestQuestion = (item.latest_question || "ไม่มีข้อความล่าสุด").trim();
-      const text = `${title}\n${countText}\nตัวอย่างข้อความล่าสุด: ${latestQuestion}`;
-      appendMessage("assistant", text);
-
-      const actionRow = document.createElement("div");
-      actionRow.className = "message-row assistant";
-      const actionBtn = document.createElement("button");
-      actionBtn.type = "button";
-      actionBtn.className = "prompt-chip";
-      actionBtn.textContent = `เปิด ${title}`;
-      actionBtn.addEventListener("click", () => openSourceSession(sessionId));
-      actionRow.appendChild(actionBtn);
-      threadEl.appendChild(actionRow);
+      appendMessage("assistant", "ไม่พบข้อมูลสำหรับคีย์เวิร์ดนี้");
     }
 
     scrollToBottom();
@@ -500,7 +491,7 @@
 
     if (isIndexPage) {
       sessionStorage.setItem(TOP_SEARCH_KEYWORD_KEY, q);
-      window.location.href = "chat.html";
+      window.location.href = "hotsearch.html";
       return;
     }
 
@@ -678,33 +669,55 @@
 
   if (newChatBtnEl) newChatBtnEl.addEventListener("click", handleNewChat);
   if (sidebarNewChatBtn) sidebarNewChatBtn.addEventListener("click", handleNewChat);
+  if (topSearchesBtn) topSearchesBtn.addEventListener("click", async () => {
+    if (!isHotSearchPage) {
+      window.location.href = "hotsearch.html";
+      return;
+    }
+    topSearchPanelVisible = true;
+    setTopSearchViewMode(true);
+    await loadTopSearches();
+  });
 
   // ==========================================
   // Initialization
   // ==========================================
-  
+
   chatList = getChatList();
   activeSessionId = getSessionId();
   renderChatList();
-  renderQuickPrompts();
-  loadTopSearches();
+  
+  // ตรวจสอบว่าต้องรันลอจิกแชทหรือไม่
+  if (isHotSearchPage) {
+    // --- โหมดหน้ายอดฮิต ---
+    if (threadEl) threadEl.style.display = "none"; // ปิดพื้นที่แชท
+    if (formEl) formEl.style.display = "none";     // ปิดช่องพิมพ์
+    if (quickPromptsEl) quickPromptsEl.style.display = "none"; // ปิดคำถามแนะนำ
 
-  // ลอจิกพิเศษ: ถ้าเปิดหน้า chat.html แล้วมีข้อความฝากไว้ ให้ส่งทันที
-  if (!isIndexPage) {
+    setTopSearchViewMode(true);
+    
     const pendingKeyword = (sessionStorage.getItem(TOP_SEARCH_KEYWORD_KEY) || "").trim();
     if (pendingKeyword) {
       sessionStorage.removeItem(TOP_SEARCH_KEYWORD_KEY);
       loadTopSearchSources(pendingKeyword);
     } else {
-      setTopSearchViewMode(false);
-      loadHistory(activeSessionId).then(() => {
-          const pending = sessionStorage.getItem(PENDING_MSG_KEY);
-          if (pending) {
-              sessionStorage.removeItem(PENDING_MSG_KEY);
-              submitQuestion(pending);
-          }
-      });
+      loadTopSearches();
     }
+  } else if (!isIndexPage) {
+    // --- โหมดหน้าแชทปกติ (chat.html) ---
+    renderQuickPrompts();
+    setTopSearchViewMode(false);
+    
+    loadHistory(activeSessionId).then(() => {
+        const pending = sessionStorage.getItem(PENDING_MSG_KEY);
+        if (pending) {
+            sessionStorage.removeItem(PENDING_MSG_KEY);
+            submitQuestion(pending);
+        }
+    });
+  } else {
+    // --- หน้า Index ---
+    renderQuickPrompts();
   }
 
   autoResizeInput();

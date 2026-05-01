@@ -33,6 +33,76 @@ KEYWORD_STOPWORDS = {
     "analysis",
 }
 
+# Heuristic symptom vocabulary for Thai automotive troubleshooting queries.
+SYMPTOM_HINTS = {
+    "สตาร์ทไม่ติด",
+    "สตาร์ทยาก",
+    "สตาร์ทติดยาก",
+    "เครื่องไม่ติด",
+    "เครื่องดับ",
+    "ดับกลางทาง",
+    "ดับเอง",
+    "เร่งไม่ขึ้น",
+    "อืด",
+    "สั่น",
+    "กระตุก",
+    "เสียงดัง",
+    "เสียงหอน",
+    "เสียงแปลก",
+    "เบรกค้าง",
+    "เบรกแข็ง",
+    "เบรกไม่อยู่",
+    "แอร์ไม่เย็น",
+    "แอร์ไม่ทำงาน",
+    "แอร์มีกลิ่น",
+    "ไฟเครื่องโชว์",
+    "ไฟโชว์",
+    "เตือนเครื่องยนต์",
+    "ความร้อนขึ้น",
+    "ร้อนจัด",
+    "โอเวอร์ฮีท",
+    "น้ำรั่ว",
+    "น้ำมันรั่ว",
+    "ควันขาว",
+    "ควันดำ",
+    "ควันฟ้า",
+    "แบตเสื่อม",
+    "แบตหมด",
+    "ชาร์จไม่เข้า",
+    "ไดชาร์จ",
+    "พวงมาลัยหนัก",
+    "พวงมาลัยสั่น",
+    "เกียร์ไม่เปลี่ยน",
+    "เข้าเกียร์ไม่ได้",
+    "คลัตช์ลื่น",
+    "รถไม่วิ่ง",
+    "ติดๆดับๆ",
+    "เครื่องสะดุด",
+}
+
+NON_SYMPTOM_HINTS = {
+    "ราคา",
+    "โปรโมชั่น",
+    "โปรโมชัน",
+    "ส่วนลด",
+    "ผ่อน",
+    "ดาวน์",
+    "ไฟแนนซ์",
+    "จองรถ",
+    "สเปค",
+    "รุ่น",
+    "สีรถ",
+    "ตารางผ่อน",
+    "ศูนย์บริการ",
+    "เวลาเปิด",
+    "เบอร์โทร",
+    "ที่อยู่",
+    "ประกัน",
+    "เอกสาร",
+    "ภาษี",
+    "พรบ",
+}
+
 
 def _db_path() -> Path:
     configured = os.getenv("QA_DB_PATH", "")
@@ -322,9 +392,28 @@ def _cleanup_keyword_chunk(text: str) -> str:
     return cleaned.strip(" -_.,:;!?()[]{}\"'“”’`~")
 
 
+def _is_vehicle_symptom_text(text: str) -> bool:
+    normalized = _normalize_text(text)
+    if not normalized:
+        return False
+
+    has_symptom_hint = any(hint in normalized for hint in SYMPTOM_HINTS)
+    if has_symptom_hint:
+        return True
+
+    # If query is purely service/sales/admin intent, do not keep as symptom keyword.
+    has_non_symptom_hint = any(hint in normalized for hint in NON_SYMPTOM_HINTS)
+    if has_non_symptom_hint:
+        return False
+
+    return False
+
+
 def _extract_symptom_keyword(question: str) -> str:
     normalized = " ".join((question or "").strip().split())
     if not normalized:
+        return ""
+    if not _is_vehicle_symptom_text(normalized):
         return ""
 
     chunks = [part.strip() for part in re.split(r"[,/|]+", normalized) if part.strip()]

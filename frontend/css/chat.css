@@ -79,6 +79,86 @@ body {
   overflow: hidden;     /* สำคัญมาก: ล็อคไม่ให้คอนเทนต์ในนี้ทะลุกรอบ */
 }
 
+.top-searches-view {
+  width: min(900px, 80%);
+  margin: 0 auto 0.5rem;
+  padding: 1rem 0 0.25rem;
+}
+
+.top-searches-view[hidden] {
+  display: none;
+}
+
+.top-searches-view-header {
+  margin-bottom: 0.75rem;
+}
+
+.top-searches-view-header h2 {
+  margin: 0;
+  color: var(--brand-color);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.top-searches-view-header p {
+  margin: 0.25rem 0 0;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.top-searches-view .history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.top-searches-view .history-list button {
+  width: 100%;
+}
+
+.top-searches-view .history-item-preview {
+  margin: 0;
+  color: #666;
+}
+
+.top-searches-view > button {
+  width: 100%;
+  text-align: left;
+  padding: 10px 15px;
+  margin-bottom: 5px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.top-searches-view > button:hover {
+  background: #fafafa;
+}
+
+.top-searches-view > button[style*="background: #f0f0f0"] {
+  background: #f0f0f0;
+}
+
+.top-searches-view > button > div:first-child {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.top-searches-view > button > div:last-child {
+  font-size: 12px;
+  color: #888;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ---------แชท----------- */
 .neo-thread {
   flex-grow: 1;         /* ดันให้กินพื้นที่ส่วนกลางทั้งหมด */

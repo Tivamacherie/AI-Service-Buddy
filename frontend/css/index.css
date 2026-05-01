@@ -134,6 +134,25 @@ body {
   justify-content: center;
 }
 
+/* Right-side panel that shows top searches when user clicks the sidebar button */
+.neo-top-searches {
+  display: none; /* toggle from JS */
+  position: fixed;
+  right: 0;
+  top: 72px; /* below top-bar */
+  width: 320px;
+  height: calc(100dvh - 92px);
+  background: #fff;
+  border-left: 1px solid #eaeaea;
+  padding: 16px;
+  overflow-y: auto;
+  z-index: 950;
+}
+
+.neo-top-searches .history-item-preview {
+  padding: 0 6px;
+}
+
 .prompt-chip {
   border: 1px solid #710100;
   background: #FFFFFF;
