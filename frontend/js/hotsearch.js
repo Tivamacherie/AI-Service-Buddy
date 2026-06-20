@@ -6,24 +6,42 @@
 
 async function loadHotSearch() {
 
-    const result =
-        await getTopSearches();
-
     const container =
         document.getElementById(
             'hotsearch-list'
         );
 
-    container.innerHTML = '';
+    if (!container) return;
 
-    result.items.forEach(item => {
+    try {
 
-        const div =
-            document.createElement('div');
+        const result =
+            await getTopSearches();
 
-        div.textContent =
-            `${item.keyword} (${item.count})`;
+        container.innerHTML = '';
 
-        container.appendChild(div);
-    });
+        result.items.forEach(item => {
+
+            const card =
+                document.createElement('div');
+
+            card.classList.add(
+                'hotsearch-item'
+            );
+
+            card.innerHTML = `
+                <span>${item.keyword}</span>
+                <span>${item.count} ครั้ง</span>
+            `;
+
+            container.appendChild(card);
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+        container.innerHTML =
+            '<p>ไม่สามารถโหลดข้อมูลได้</p>';
+    }
 }

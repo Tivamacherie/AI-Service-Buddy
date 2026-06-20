@@ -1,0 +1,12 @@
+.hotsearch-item{
+    display:flex;
+    justify-content:space-between;
+    padding:12px;
+    margin-bottom:8px;
+    border-radius:12px;
+    cursor:pointer;
+}
+
+.hotsearch-item:hover{
+    background:#f4f4f4;
+}
