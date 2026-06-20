@@ -1,385 +1,164 @@
-* {
-  box-sizing: border-box;
-}
-
-html {
-  -webkit-text-size-adjust: 100%;
-}
-
-:root {
-  --brand-color: #A31E19; /* สีแดงเข้ม (Maroon) ของ ISUZU */
-  --text-color: #A31E19;
-  --desc-text-color: #666;
-  --bg-color: #FFFFFF;
-  --input-bg-color: #F2F2F2;
-  --chip-border-color: #A31E19;
-}
-
 body {
-  margin: 0;
-  height: 100dvh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: row; /* สำคัญมาก! สั่งให้แบ่ง Layout เป็นซ้าย-ขวา */
-  font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-}
-
-.neo-shell {
-  display: flex;
-  flex-direction: column; /* ให้เนื้อหาฝั่งขวา (topbar, chat, input) เรียงจากบนลงล่าง */
-  flex-grow: 1;           /* สั่งให้แชทขยายกว้างเต็มพื้นที่จอที่เหลือจาก Sidebar */
-  height: 100%;
-  overflow: hidden;
-}
-
-/* --- แถบด้านบน (Top Bar) --- */
-.top-bar {
-  padding: 10px 20px;
-  background-color: var(--bg-color);
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-}
-
-.top-bar-icons {
-  padding-top: 2%;
-  display: flex;
-  gap: 15px; /* ลดระยะห่างลงนิดหน่อยเพื่อให้พอดี */
-}
-
-.top-bar-text {
-  padding-top: 2%;
-  margin: 0 0 0 20px;
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--brand-color);
-}
-
-.top-bar button {
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  outline: none;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.top-bar button img {
-  display: block;
-}
-
-
-/* --- พื้นที่เนื้อหาหลัก (Main Content Area) --- */
-.main-content {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center; /* จัดกลางในแนวตั้ง */
-  align-items: center;     /* จัดกลางในแนวนอน */
-  margin-top: -10%;
-  padding: 20px;
-}
-
-/* --- ส่วนโลโก้และพาดหัว (Hero Section) --- */
-.hero-section {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 25vh; /* ดันโลโก้ลงมาจากขอบบน (ปรับตัวเลข 15 ให้มาก/น้อยได้ตามชอบ) */
-  margin-bottom: 20px; /* ระยะห่างระหว่างโลโก้กับข้อความทักทาย */
-  flex-shrink: 0;
-}
-
-.hero-logo {
-  width: 320px; 
-  max-width: 80%;
-  height: auto;
-}
-
-.neo-thread {
-  margin: 0;
-  font-size: 16px;
-  color: var(--desc-text-color);
-  line-height: 1.6;
-  flex-grow: 1;
-  overflow-y: auto; /* ถ้าแชทยาวให้เลื่อนขึ้นได้ */
-  display: flex;
-  flex-direction: column;
-  text-align: center; 
-
-  max-width: 50%;     /* บีบความกว้างไม่ให้ข้อความยาวทะลุขอบ */
-  margin-left: auto;    /* จัดให้อยู่ตรงกลางจอ */
-  margin-right: auto;
-  line-height: 1.6;     /* เว้นระยะบรรทัดให้อ่านง่าย */
-}
-
-/*-----------แถบด้านล่าง(คำถามแนะนำ+ช่องพิมพ์)---------- */
-.neo-main {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;     /* สำคัญมาก: ล็อคไม่ให้คอนเทนต์ในนี้ทะลุกรอบ */
-}
-
-  /* ----- คำถามแนะนำ----- */
-.neo-prompts {
-  display: flex;
-  gap: 0.48rem;
-  overflow-x: auto;
-  padding: 0 clamp(0.9rem, 3vw, 3.8rem) 0.55rem;
-  justify-content: center;
-}
-
-/* Right-side panel that shows top searches when user clicks the sidebar button */
-.neo-top-searches {
-  display: none; /* toggle from JS */
-  position: fixed;
-  right: 0;
-  top: 72px; /* below top-bar */
-  width: 320px;
-  height: calc(100dvh - 92px);
-  background: #fff;
-  border-left: 1px solid #eaeaea;
-  padding: 16px;
-  overflow-y: auto;
-  z-index: 950;
-}
-
-.neo-top-searches .history-item-preview {
-  padding: 0 6px;
-}
-
-.prompt-chip {
-  border: 1px solid #710100;
-  background: #FFFFFF;
-  color: #710100;
-  border-radius: 999px;
-  padding: 0.42rem 0.72rem;
-  font-size: 0.8rem;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.prompt-chip:hover {
-  border-color: #710100;
-  background: #a51210;
-  /* background: linear-gradient(180deg, #ff9897, #d31511); */
-  color: #fff;
-}
-  /* ---------------------- */
-
-
-  /* -----กล่องพิมพ์ข้อความ------ */
-.neo-composer {
-  display: flex;
-  gap: 0.65rem;
-  padding: 0.78rem clamp(0.9rem, 3vw, 3.8rem) calc(0.9rem + env(safe-area-inset-bottom));
-  background: #fff;
-  backdrop-filter: blur(8px);
-  width: 80%;
-  padding-bottom: 2%;
-  margin-left: auto;   /* ดันซ้ายให้มาตรงกลาง */
-  margin-right: auto;  /* ดันขวาให้มาตรงกลาง */
-  margin-top: auto;
-}
-
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.neo-input {
-  flex: 1;
-  resize: none;
-  min-height: 50px;
-  max-height: 180px;
-  border: 1px solid #d6d6d6;
-  background: #FFFFFF;
-  border-radius: 999px;
-  padding: 0.85rem 0.95rem;
-  font: inherit;
-  color: #2e271f;
-  outline: none;
-}
-
-.neo-input::placeholder {
-  color: #a8a8a8;
-}
-
-.neo-input:focus {
-  border-color: #d6d6d6;
-}
-
-.neo-send {
-  border: 1px solid #d6d6d6;
-  /* background: linear-gradient(135deg, #f59e0b, #ea580c); */
-  background: #000000;
-  color: #fff;
-  font-weight: 700;
-  border-radius: 999px;
-  padding: 0 1.25rem;
-  cursor: pointer;
-}
-
-.neo-send:disabled,.neo-input:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-  /* ---------------------- */
-/*-------------------------------------------------- */
-
-
-/* ================= Sidebar Styles ================= */
-.neo-sidebar {
-  width: 288px;
-  background-color: #FFFFFF;
-  border-right: 1px solid #eaeaea;
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  transition: all 0.3s ease; /* ทำให้ตอนเปิด/ปิด มีแอนิเมชันสมูทๆ */
-  z-index: 1000;
-  overflow: hidden;
-}
-
-/* สไตล์ด้านใน Sidebar */
-.sidebar-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 20px;
-}
-
-.logo-sidebar{
-  margin-top: 15%;
-  width: 160px;   /* กำหนดความกว้างที่ต้องการ */
-  height: auto;  /* สั่งให้ความสูงปรับตามอัตโนมัติ รูปจะไม่ยืด/หดผิดรูป */
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #666;
-  padding: 0;
-}
-
-.sidebar-action-btn {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 10px 20px;
-  padding: 10px;
-  background: transparent;
-  border: none;
-  transition: background 0.2s;
-
-  margin-top: 0.85rem;
-  text-align: left;
-  background: #FFFFFF;
-  color: #575757;
-  font-size: 17px;
-  padding: 0.8rem 0.9rem;
-  cursor: pointer;
-  border-radius: 10px;
-  outline: none;
-  box-shadow: none;
-  appearance: none;
-  -webkit-appearance: none;
-
-  /* newchat icon */
-  display: flex;          
-  align-items: center;  
-  gap: 0.5rem;
-
-}
-
-.sidebar-action-btn:hover {
-  background: #f5f5f5;
-}
-
-.sidebar-section {
-  padding: 20px;
-  flex-grow: 1;
-  overflow-y: auto;
-}
-
-.sidebar-section-top-searches {
-  flex-grow: 0;
-}
-
-.sidebar-section + .sidebar-section {
-  border-top: 1px solid rgba(0, 0, 0, 0.06);
-  padding-top: 16px;
-}
-
-.sidebar-section-title {
-  margin: 0 0 15px 0;
-  font-size: 15px;
-  color: #666;
-  font-weight: 600;
-}
-
-.drawer-backdrop {
-  display: none;
-}
-
-/* ================= Responsive & Toggle Classes ================= */
-
-/* กรณีจอคอม (ซ่อน Sidebar เมื่อโดนสั่งปิด) */
-@media (min-width: 981px) {
-  body.sidebar-closed .neo-sidebar {
-    width: 0;
-    border: none;
+    background-color: FFFFFF;
+    color: var(--text-color);
+    font-family: 'Arial', sans-serif;
+    margin: 0;
     padding: 0;
-  }
-  .close-btn {
-    display: none; /* จอคอมไม่ต้องมีปุ่มกากบาท ให้ปิดที่ Hamburger แทน */
-  }
+    display: flex;
+    justify-content: space-between;
+    background-color: #ffffff;
 }
 
-/* กรณีจอมือถือ/แท็บเล็ต (แสดง Sidebar แบบทับหน้าจอ) */
-@media (max-width: 980px) {
-  .neo-sidebar {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    width: 300px;
-    transform: translateX(-100%); /* ซ่อนไว้ทางซ้ายก่อน */
-  }
-
-  /* เมื่อคลาส sidebar-open ทำงาน จะเลื่อน Sidebar ออกมา */
-  body.sidebar-open .neo-sidebar {
-    transform: translateX(0);
-  }
-
-  /* ม่านดำหลัง Sidebar ตอนเปิดในมือถือ */
-  .drawer-backdrop {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    z-index: 999;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-  }
-
-  body.sidebar-open .drawer-backdrop {
-    opacity: 1;
-    pointer-events: auto;
-  }
+/* ========== Sidebar ========== */
+.sidebar {
+    width: 20vw;
+    height: 95vh;
+    background-color: #f9f9f9;
+    padding: 20px;
+    margin-left: 20px;
+    margin-top: 2.5vh;
+    margin-bottom: 2.5vh;
+    box-sizing: border-box;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;    
+    flex-direction: column;
 }
+
+.logo {
+    margin-top:10%;
+    height: 8%;
+    margin-bottom: 10%;
+}
+
+.icon {
+    margin-right: 18px;
+    margin-left: 10px;
+    color: #999999;
+}
+
+.sidebar-item {
+    margin: 2px 0;
+    padding: 2px;
+    padding-left: 20px;
+    width: 90%;
+    height: 6%;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    color: #999999;
+}
+
+.sidebar-item:hover {
+    background-color: #ededed;
+    color: #454545; 
+}
+
+.sidebar-item:hover .icon {
+    color: #454545; 
+}
+
+.sidebar-item.active span {
+    color: #101010; /* ข้อความดำ */
+}
+
+.sidebar-item.active .icon {
+    color: #A31E19; /* ไอคอนแดง */
+}
+/* ============================= */
+
+
+/* ========== History ========== */
+.history-title {
+    align-self: flex-start;
+    margin-left: 10px;
+    margin-top: 20px;
+    color: #515151;
+}
+
+.history-section{
+    width: 100%;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.history-item {
+    margin: 0.1vh 0;
+    padding: 12px 15%;
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #999999;
+}
+
+#history-list{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    height: 10%;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #999999;
+}
+
+.history-item:hover {
+    background: #f0f0f0;
+}
+
+.history-item.active {
+    background-color: #ededed;
+    color: #101010;
+}
+/* ============================= */
+
+
+/* ========== ฝั่งขวา ========== */
+
+.content {
+    width: 76vw;
+    height: 95vh;
+    /* padding: 20px; */
+    margin-right: 20px;
+    margin-top: 2.5vh;
+    margin-bottom: 2.5vh;
+    box-sizing: border-box;
+    border-radius: 20px;
+    /* background-color: #c31010; */
+}
+
+.topbar {
+    height: 10vh;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    background-color: #f9f9f9;
+    border-radius: 20px;
+}
+
+.topbar svg {
+    margin-left: auto;
+    cursor: pointer;
+    margin-right: 30px;
+    color: #999999;
+
+}
+
+.topbar svg:hover {
+    color: #454545;
+}
+
+.main-content {
+    height: 84vh;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: #f9f9f9;
+    border-radius: 20px;
+}
+/* ============================= */
+
+
+

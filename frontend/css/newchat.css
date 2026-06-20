@@ -1,0 +1,179 @@
+.chat-area{
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  font-size: 16px;
+  color: #555555;
+  margin: 20px;
+}
+
+.user-message{
+  width: fit-content;
+  max-width: 70%;
+
+  margin-top: 2vh;
+  margin-left: auto;
+  margin-bottom: 2vh;
+
+  padding: 12px 16px;
+
+  background: #ecebeb;
+  color: #555555;
+
+  border-radius: 16px;
+}
+
+.bot-message{
+  width: fit-content;
+  max-width: 60%;
+
+  margin-top: 2vh;
+  margin-right: auto;
+  margin-bottom: 2vh;
+
+  padding: 12px 16px;
+
+  background: transparent;
+  color: #555555;
+
+  border-radius: 16px;
+}
+
+/* ----------bot loading---------- */
+.typing-indicator {
+  display: flex;
+  gap: 5px;
+}
+
+.typing-indicator span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #999;
+  animation: bounce 1.2s infinite;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+    0%, 80%, 100% {
+        transform: translateY(0);
+        opacity: 0.4;
+    }
+
+    40% {
+        transform: translateY(-6px);
+        opacity: 1;
+    }
+}
+/* ---------------------- */
+
+  /* ----- คำถามแนะนำ----- */
+.quick-prompts {
+  flex-shrink: 0;           /* ห้ามโดนกล่องอื่นบีบความสูงเด็ดขาด */
+  min-height: max-content;  /* บังคับความสูงให้พอดีกับข้อความข้างในเสมอ */
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 15px clamp(0.9rem, 3vw, 3.8rem) 15px; /* เพิ่มพื้นที่ว่างด้านบนและล่างให้ดูไม่อึดอัด */
+  justify-content: center;
+}
+
+/* ซ่อนแถบ Scrollbar แนวนอนของ Chips ไม่ให้ดูเกะกะตา แต่ยังเอานิ้วปัดเลื่อนซ้ายขวาได้ */
+.quick-prompts::-webkit-scrollbar {
+  display: none;
+}
+
+.prompt-card {
+  flex-shrink: 0;           /* ป้องกันไม่ให้ตัวชิปโดนบีบความกว้างด้วย */
+  border: 1px solid #555555;
+  background: transparent;
+  color: #555555;
+  border-radius: 999px;
+  padding: 0.5rem 0.8rem;   /* ปรับความอ้วนของชิปขึ้นอีกนิดให้กดง่าย */
+  font-size: 0.85rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.prompt-card:hover {
+  border-color: #7f110f;
+  background: #7f110f;
+  color: #ffffff;
+}
+  /* ---------------------- */
+
+  /* -----กล่องพิมพ์ข้อความ------ */
+
+.newchat-typebox {
+  display: flex;
+  /* gap: 0.65rem; */
+  padding: 0.78rem clamp(0.9rem, 3vw, 3.8rem) calc(0.9rem + env(safe-area-inset-bottom));
+  backdrop-filter: blur(8px);
+  width: 80%;
+  padding-bottom: 2%;
+  margin-left: auto;   /* ดันซ้ายให้มาตรงกลาง */
+  margin-right: auto;  /* ดันขวาให้มาตรงกลาง */
+  margin-top: auto;
+
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.newchat-input {
+  flex: 1;
+  resize: none;
+  min-height: 20px;
+  /* max-height: 180px; */
+  border: 1px solid #D2D2D2;
+  background: #F5F5F5;
+  border-radius: 999px;
+  padding: 0.85rem 0.95rem;
+  font: inherit;
+  color: #2e271f;
+  outline: none;
+  margin-right: 0.65rem;
+}
+
+.newchat-input::placeholder {
+  color: #a8a8a8;
+}
+
+.newchat-input:focus {
+  border-color: #d6d6d6;
+}
+
+.newchat-send {
+  border: 1px solid #d6d6d6;
+  background: #000000;
+  color: #fff;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0 1.25rem;
+  cursor: pointer;
+}
+
+.newchat-send:disabled,.newchat-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+  /* ---------------------- */
+/*-------------------------------------------------- */
+

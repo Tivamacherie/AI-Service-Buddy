@@ -6,7 +6,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(dotenv_path=Path(__file__).resolve().parent.parent / ".env", override=True)
 
 from routes.chat import chat_bp
 from storage.qa_store import init_db
@@ -91,12 +91,12 @@ def create_app() -> Flask:
 
     @app.get("/")
     def serve_root():
-        return send_from_directory(frontend_root, "splash.html")
+        return send_from_directory(frontend_root, "index.html")
 
     @app.get("/<path:filename>")
     def serve_frontend_files(filename: str):
         # Serve files from frontend root first, then support legacy top-level URLs.
-        for base_dir in (frontend_root, frontend_root / "css", frontend_root / "js"):
+        for base_dir in (frontend_root, frontend_root / "assets", frontend_root / "css", frontend_root / "js"):
             candidate = base_dir / filename
             if candidate.is_file():
                 return send_from_directory(base_dir, filename)
