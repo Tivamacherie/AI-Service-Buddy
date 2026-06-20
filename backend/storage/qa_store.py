@@ -506,3 +506,169 @@ def get_best_similar_answer(question: str, min_score: float = 0.9) -> Dict[str, 
     if float(best["score"]) < max(0.0, min(min_score, 1.0)):
         return None
     return best
+
+
+def get_dashboard_stats() -> Dict[str, object]:
+    with _DB_LOCK:
+        conn = sqlite3.connect(_db_path())
+        conn.row_factory = sqlite3.Row
+        try:
+            total_chats = conn.execute(
+                "SELECT COUNT(*) as cnt FROM chat_turns"
+            ).fetchone()["cnt"]
+            total_sessions = conn.execute(
+                "SELECT COUNT(DISTINCT session_id) as cnt FROM chat_turns"
+            ).fetchone()["cnt"]
+            total_searches = conn.execute(
+                "SELECT COUNT(*) as cnt FROM top_search_events"
+            ).fetchone()["cnt"]
+            unique_keywords = conn.execute(
+                "SELECT COUNT(DISTINCT keyword_norm) as cnt FROM top_search_events WHERE TRIM(keyword_norm) != ''"
+            ).fetchone()["cnt"]
+
+            source_rows = conn.execute(
+                """
+                SELECT source, COUNT(*) as cnt
+                FROM chat_turns
+                GROUP BY source
+                """
+            ).fetchall()
+        finally:
+            conn.close()
+
+    source_breakdown = {
+        str(row["source"] or "unknown"): int(row["cnt"]) for row in source_rows
+    }
+
+    return {
+        "total_chats": int(total_chats or 0),
+        "total_sessions": int(total_sessions or 0),
+        "total_searches": int(total_searches or 0),
+        "unique_keywords": int(unique_keywords or 0),
+        "source_breakdown": source_breakdown,
+    }
+
+
+def get_daily_usage(days: int = 7) -> List[Dict[str, object]]:
+    n = max(1, min(days, 30))
+    cutoff = int(time.time()) - (n * 86400)
+
+    with _DB_LOCK:
+        conn = sqlite3.connect(_db_path())
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                """
+                SELECT DATE(created_at, 'unixepoch') as day, COUNT(*) as cnt
+                FROM chat_turns
+                WHERE created_at >= ?
+                GROUP BY day
+                ORDER BY day ASC
+                """,
+                (cutoff,),
+            ).fetchall()
+        finally:
+            conn.close()
+
+    data = {str(row["day"]): int(row["cnt"]) for row in rows}
+    result = []
+    for i in range(n - 1, -1, -1):
+        day_ts = int(time.time()) - (i * 86400)
+        day_str = time.strftime("%Y-%m-%d", time.gmtime(day_ts))
+        result.append(
+            {
+                "day": day_str,
+                "count": data.get(day_str, 0),
+            }
+        )
+
+    return result
+
+
+def get_daily_searches(days: int = 7) -> List[Dict[str, object]]:
+    n = max(1, min(days, 30))
+    cutoff = int(time.time()) - (n * 86400)
+
+    with _DB_LOCK:
+        conn = sqlite3.connect(_db_path())
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                """
+                SELECT DATE(created_at, 'unixepoch') as day, COUNT(*) as cnt
+                FROM top_search_events
+                WHERE created_at >= ?
+                GROUP BY day
+                ORDER BY day ASC
+                """,
+                (cutoff,),
+            ).fetchall()
+        finally:
+            conn.close()
+
+    data = {str(row["day"]): int(row["cnt"]) for row in rows}
+    result = []
+    for i in range(n - 1, -1, -1):
+        day_ts = int(time.time()) - (i * 86400)
+        day_str = time.strftime("%Y-%m-%d", time.gmtime(day_ts))
+        result.append(
+            {
+                "day": day_str,
+                "count": data.get(day_str, 0),
+            }
+        )
+
+    return result
+
+
+def get_answer_sources() -> Dict[str, int]:
+    with _DB_LOCK:
+        conn = sqlite3.connect(_db_path())
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                """
+                SELECT source, COUNT(*) as cnt
+                FROM chat_turns
+                GROUP BY source
+                """
+            ).fetchall()
+        finally:
+            conn.close()
+
+    return {str(row["source"] or "unknown"): int(row["cnt"]) for row in rows}
+
+
+def get_hourly_usage(days: int = 7) -> List[Dict[str, object]]:
+    n = max(1, min(days, 30))
+    cutoff = int(time.time()) - (n * 86400)
+
+    with _DB_LOCK:
+        conn = sqlite3.connect(_db_path())
+        conn.row_factory = sqlite3.Row
+        try:
+            rows = conn.execute(
+                """
+                SELECT STRFTIME('%H', created_at, 'unixepoch') as hour, COUNT(*) as cnt
+                FROM chat_turns
+                WHERE created_at >= ?
+                GROUP BY hour
+                ORDER BY hour ASC
+                """,
+                (cutoff,),
+            ).fetchall()
+        finally:
+            conn.close()
+
+    hourly = {str(row["hour"]).zfill(2): int(row["cnt"]) for row in rows}
+    result = []
+    for h in range(24):
+        hour_str = str(h).zfill(2)
+        result.append(
+            {
+                "hour": hour_str,
+                "count": hourly.get(hour_str, 0),
+            }
+        )
+
+    return result

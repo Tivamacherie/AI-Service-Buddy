@@ -96,3 +96,105 @@ async function getHistory(sessionId) {
 
     throw new Error('Unable to load history');
 }
+
+async function getDashboardStats() {
+    for (const url of API_URL_CANDIDATES) {
+        try {
+            const response = await fetchWithTimeout(
+                url.replace(/\/ask$/, '/dashboard/stats'),
+                {},
+                REQUEST_TIMEOUT_MS
+            );
+
+            if (!response.ok) continue;
+            return await response.json();
+        } catch (_) {}
+    }
+
+    throw new Error('Unable to load dashboard stats');
+}
+
+async function getDailyUsage(days = 7) {
+    for (const url of API_URL_CANDIDATES) {
+        try {
+            const response = await fetchWithTimeout(
+                `${url.replace(/\/ask$/, '/dashboard/daily-usage')}?days=${encodeURIComponent(days)}`,
+                {},
+                REQUEST_TIMEOUT_MS
+            );
+
+            if (!response.ok) continue;
+            return await response.json();
+        } catch (_) {}
+    }
+
+    throw new Error('Unable to load daily usage');
+}
+
+async function getDailySearches(days = 7) {
+    for (const url of API_URL_CANDIDATES) {
+        try {
+            const response = await fetchWithTimeout(
+                `${url.replace(/\/ask$/, '/dashboard/daily-searches')}?days=${encodeURIComponent(days)}`,
+                {},
+                REQUEST_TIMEOUT_MS
+            );
+
+            if (!response.ok) continue;
+            return await response.json();
+        } catch (_) {}
+    }
+
+    throw new Error('Unable to load daily searches');
+}
+
+async function getHourlyUsage(days = 7) {
+    for (const url of API_URL_CANDIDATES) {
+        try {
+            const response = await fetchWithTimeout(
+                `${url.replace(/\/ask$/, '/dashboard/hourly-usage')}?days=${encodeURIComponent(days)}`,
+                {},
+                REQUEST_TIMEOUT_MS
+            );
+
+            if (!response.ok) continue;
+            return await response.json();
+        } catch (_) {}
+    }
+
+    throw new Error('Unable to load hourly usage');
+}
+
+async function getDashboardTopSearches(limit = 5) {
+    for (const url of API_URL_CANDIDATES) {
+        try {
+            const response = await fetchWithTimeout(
+                `${url.replace(/\/ask$/, '/dashboard/top-searches')}?limit=${encodeURIComponent(limit)}`,
+                {},
+                REQUEST_TIMEOUT_MS
+            );
+
+            if (!response.ok) continue;
+            return await response.json();
+        } catch (_) {}
+    }
+
+    throw new Error('Unable to load top searches');
+}
+
+async function getDashboardAnswerSources() {
+    for (const url of API_URL_CANDIDATES) {
+        try {
+            const response = await fetchWithTimeout(
+                `${url.replace(/\/ask$/, '/dashboard/answer-sources')}`,
+                {},
+                REQUEST_TIMEOUT_MS
+            );
+
+            if (!response.ok) continue;
+            return await response.json();
+        } catch (_) {}
+    }
+
+    throw new Error('Unable to load answer sources');
+}

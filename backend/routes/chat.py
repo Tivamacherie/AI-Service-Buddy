@@ -8,7 +8,12 @@ from rag.retriever import retrieve_context
 from storage.qa_store import (
     clear_chat_history,
     delete_chat_session,
+    get_answer_sources,
     get_best_similar_answer,
+    get_daily_searches,
+    get_daily_usage,
+    get_dashboard_stats,
+    get_hourly_usage,
     get_recent_turns,
     get_similar_qa,
     get_top_search_sources,
@@ -147,3 +152,43 @@ def top_search_sources():
     limit = _normalize_source_limit(request.args.get("limit"), default=20)
     sessions = get_top_search_sources(keyword=keyword, limit=limit)
     return jsonify({"keyword": keyword, "sessions": sessions, "limit": limit})
+
+
+@chat_bp.get("/dashboard/stats")
+def dashboard_stats():
+    stats = get_dashboard_stats()
+    return jsonify(stats)
+
+
+@chat_bp.get("/dashboard/daily-usage")
+def dashboard_daily_usage():
+    days = _normalize_limit(request.args.get("days"), default=7)
+    data = get_daily_usage(days=days)
+    return jsonify({"days": days, "data": data})
+
+
+@chat_bp.get("/dashboard/daily-searches")
+def dashboard_daily_searches():
+    days = _normalize_limit(request.args.get("days"), default=7)
+    data = get_daily_searches(days=days)
+    return jsonify({"days": days, "data": data})
+
+
+@chat_bp.get("/dashboard/hourly-usage")
+def dashboard_hourly_usage():
+    days = _normalize_limit(request.args.get("days"), default=7)
+    data = get_hourly_usage(days=days)
+    return jsonify({"days": days, "data": data})
+
+
+@chat_bp.get("/dashboard/top-searches")
+def dashboard_top_searches():
+    limit = _normalize_limit(request.args.get("limit"), default=5)
+    items = get_top_searches(limit=limit)
+    return jsonify({"items": items, "limit": limit})
+
+
+@chat_bp.get("/dashboard/answer-sources")
+def dashboard_answer_sources():
+    sources = get_answer_sources()
+    return jsonify(sources)

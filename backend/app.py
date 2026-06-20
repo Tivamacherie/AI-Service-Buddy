@@ -71,7 +71,7 @@ def create_app() -> Flask:
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
         response.headers[
             "Content-Security-Policy"
-        ] = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' https: http:;"
+        ] = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; connect-src 'self' https: http:;"
 
         if is_production:
             response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
@@ -96,7 +96,13 @@ def create_app() -> Flask:
     @app.get("/<path:filename>")
     def serve_frontend_files(filename: str):
         # Serve files from frontend root first, then support legacy top-level URLs.
-        for base_dir in (frontend_root, frontend_root / "assets", frontend_root / "css", frontend_root / "js"):
+        for base_dir in (
+            frontend_root,
+            frontend_root / "assets",
+            frontend_root / "css",
+            frontend_root / "js",
+            frontend_root / "pages",
+        ):
             candidate = base_dir / filename
             if candidate.is_file():
                 return send_from_directory(base_dir, filename)
