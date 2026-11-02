@@ -7,7 +7,15 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import List, Dict
 
+try:
+    import psycopg
+    from psycopg.rows import dict_row
+except ImportError:  # PostgreSQL is optional for local SQLite development.
+    psycopg = None
+    dict_row = None
+
 _DB_LOCK = threading.Lock()
+_DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
 TERM_PATTERN = re.compile(r"[0-9a-zA-Zก-๙]+")
 LEADING_NOISE_PATTERN = re.compile(
     r"^(?:อาการ|ปัญหา|เรื่อง|กรณี|ช่วยดู|ช่วยเช็ค|ช่วยวิเคราะห์|รถ|รถยนต์)+",
@@ -111,17 +119,70 @@ def _db_path() -> Path:
     return Path(__file__).resolve().parent.parent / "db" / "chat_memory.sqlite3"
 
 
+class _DatabaseConnection:
+    def __init__(self) -> None:
+        if _DATABASE_URL:
+            if psycopg is None or dict_row is None:
+                raise RuntimeError("psycopg is required when DATABASE_URL is configured")
+            self.backend = "postgres"
+            self._connection = psycopg.connect(_DATABASE_URL, row_factory=dict_row)
+        else:
+            self.backend = "sqlite"
+            self._connection = sqlite3.connect(_db_path())
+
+    def execute(self, sql: str, params: tuple = ()):
+        if self.backend == "postgres":
+            sql = sql.replace("?", "%s")
+        return self._connection.execute(sql, params)
+
+    @property
+    def row_factory(self):
+        return getattr(self._connection, "row_factory", None)
+
+    @row_factory.setter
+    def row_factory(self, value) -> None:
+        if self.backend == "sqlite":
+            self._connection.row_factory = value
+
+    def commit(self) -> None:
+        self._connection.commit()
+
+    def close(self) -> None:
+        self._connection.close()
+
+
+def _connect() -> _DatabaseConnection:
+    return _DatabaseConnection()
+
+
+def _using_postgres() -> bool:
+    return bool(_DATABASE_URL)
+
+
+def _day_expression() -> str:
+    if _using_postgres():
+        return "(TO_TIMESTAMP(created_at) AT TIME ZONE 'UTC')::date"
+    return "DATE(created_at, 'unixepoch')"
+
+
+def _hour_expression() -> str:
+    if _using_postgres():
+        return "TO_CHAR(TO_TIMESTAMP(created_at) AT TIME ZONE 'UTC', 'HH24')"
+    return "STRFTIME('%H', created_at, 'unixepoch')"
+
+
 def init_db() -> None:
-    path = _db_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
+    if not _using_postgres():
+        path = _db_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
 
     with _DB_LOCK:
-        conn = sqlite3.connect(path)
+        conn = _connect()
         try:
             conn.execute(
-                """
+                f"""
                 CREATE TABLE IF NOT EXISTS chat_turns (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id {"BIGSERIAL" if _using_postgres() else "INTEGER"} PRIMARY KEY {"" if _using_postgres() else "AUTOINCREMENT"},
                     session_id TEXT NOT NULL,
                     question TEXT NOT NULL,
                     answer TEXT NOT NULL,
@@ -137,9 +198,9 @@ def init_db() -> None:
                 "CREATE INDEX IF NOT EXISTS idx_chat_question ON chat_turns(question)"
             )
             conn.execute(
-                """
+                f"""
                 CREATE TABLE IF NOT EXISTS top_search_events (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id {"BIGSERIAL" if _using_postgres() else "INTEGER"} PRIMARY KEY {"" if _using_postgres() else "AUTOINCREMENT"},
                     session_id TEXT NOT NULL,
                     keyword TEXT NOT NULL,
                     keyword_norm TEXT NOT NULL,
@@ -171,7 +232,7 @@ def save_chat_turn(session_id: str, question: str, answer: str, source: str = "c
     created_at = int(time.time())
 
     with _DB_LOCK:
-        conn = sqlite3.connect(_db_path())
+        conn = _connect()
         try:
             conn.execute(
                 "INSERT INTO chat_turns(session_id, question, answer, source, created_at) VALUES(?, ?, ?, ?, ?)",
@@ -193,7 +254,7 @@ def delete_chat_session(session_id: str) -> int:
         return 0
 
     with _DB_LOCK:
-        conn = sqlite3.connect(_db_path())
+        conn = _connect()
         try:
             cur = conn.execute("DELETE FROM chat_turns WHERE session_id = ?", (sid,))
             conn.execute("DELETE FROM top_search_events WHERE session_id = ?", (sid,))
@@ -205,7 +266,7 @@ def delete_chat_session(session_id: str) -> int:
 
 def clear_chat_history() -> int:
     with _DB_LOCK:
-        conn = sqlite3.connect(_db_path())
+        conn = _connect()
         try:
             cur = conn.execute("DELETE FROM chat_turns")
             conn.execute("DELETE FROM top_search_events")
@@ -221,7 +282,7 @@ def get_recent_turns(session_id: str, limit: int = 8) -> List[Dict[str, str]]:
 
     n = max(1, min(limit, 30))
     with _DB_LOCK:
-        conn = sqlite3.connect(_db_path())
+        conn = _connect()
         conn.row_factory = sqlite3.Row
         try:
             rows = conn.execute(
@@ -253,7 +314,7 @@ def get_similar_qa(question: str, limit: int = 3) -> List[Dict[str, str]]:
     n = max(1, min(limit, 5))
 
     with _DB_LOCK:
-        conn = sqlite3.connect(_db_path())
+        conn = _connect()
         conn.row_factory = sqlite3.Row
         try:
             rows = conn.execute(
@@ -276,7 +337,7 @@ def get_top_searches(limit: int = 5) -> List[Dict[str, object]]:
     n = max(1, min(limit, 10))
 
     with _DB_LOCK:
-        conn = sqlite3.connect(_db_path())
+        conn = _connect()
         conn.row_factory = sqlite3.Row
         try:
             rows = conn.execute(
@@ -333,7 +394,7 @@ def get_top_search_sources(keyword: str, limit: int = 20) -> List[Dict[str, obje
         return []
 
     with _DB_LOCK:
-        conn = sqlite3.connect(_db_path())
+        conn = _connect()
         conn.row_factory = sqlite3.Row
         try:
             rows = conn.execute(
@@ -473,7 +534,7 @@ def get_best_similar_answer(question: str, min_score: float = 0.9) -> Dict[str, 
         return None
 
     with _DB_LOCK:
-        conn = sqlite3.connect(_db_path())
+        conn = _connect()
         conn.row_factory = sqlite3.Row
         try:
             rows = conn.execute(
@@ -510,7 +571,7 @@ def get_best_similar_answer(question: str, min_score: float = 0.9) -> Dict[str, 
 
 def get_dashboard_stats() -> Dict[str, object]:
     with _DB_LOCK:
-        conn = sqlite3.connect(_db_path())
+        conn = _connect()
         conn.row_factory = sqlite3.Row
         try:
             total_chats = conn.execute(
@@ -554,12 +615,12 @@ def get_daily_usage(days: int = 7) -> List[Dict[str, object]]:
     cutoff = int(time.time()) - (n * 86400)
 
     with _DB_LOCK:
-        conn = sqlite3.connect(_db_path())
+        conn = _connect()
         conn.row_factory = sqlite3.Row
         try:
             rows = conn.execute(
-                """
-                SELECT DATE(created_at, 'unixepoch') as day, COUNT(*) as cnt
+                f"""
+                SELECT {_day_expression()} as day, COUNT(*) as cnt
                 FROM chat_turns
                 WHERE created_at >= ?
                 GROUP BY day
@@ -590,12 +651,12 @@ def get_daily_searches(days: int = 7) -> List[Dict[str, object]]:
     cutoff = int(time.time()) - (n * 86400)
 
     with _DB_LOCK:
-        conn = sqlite3.connect(_db_path())
+        conn = _connect()
         conn.row_factory = sqlite3.Row
         try:
             rows = conn.execute(
-                """
-                SELECT DATE(created_at, 'unixepoch') as day, COUNT(*) as cnt
+                f"""
+                SELECT {_day_expression()} as day, COUNT(*) as cnt
                 FROM top_search_events
                 WHERE created_at >= ?
                 GROUP BY day
@@ -623,7 +684,7 @@ def get_daily_searches(days: int = 7) -> List[Dict[str, object]]:
 
 def get_answer_sources() -> Dict[str, int]:
     with _DB_LOCK:
-        conn = sqlite3.connect(_db_path())
+        conn = _connect()
         conn.row_factory = sqlite3.Row
         try:
             rows = conn.execute(
@@ -644,12 +705,12 @@ def get_hourly_usage(days: int = 7) -> List[Dict[str, object]]:
     cutoff = int(time.time()) - (n * 86400)
 
     with _DB_LOCK:
-        conn = sqlite3.connect(_db_path())
+        conn = _connect()
         conn.row_factory = sqlite3.Row
         try:
             rows = conn.execute(
-                """
-                SELECT STRFTIME('%H', created_at, 'unixepoch') as hour, COUNT(*) as cnt
+                f"""
+                SELECT {_hour_expression()} as hour, COUNT(*) as cnt
                 FROM chat_turns
                 WHERE created_at >= ?
                 GROUP BY hour

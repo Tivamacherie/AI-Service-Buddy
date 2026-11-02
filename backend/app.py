@@ -14,13 +14,21 @@ from storage.qa_store import init_db
 
 
 def create_app() -> Flask:
+    project_root = Path(__file__).resolve().parent.parent
+    app_env = os.getenv("APP_ENV", "development").strip().lower()
+    is_production = app_env in {"prod", "production"}
+    if is_production and not os.getenv("DATABASE_URL", "").strip():
+        raise RuntimeError("DATABASE_URL is required in production; SQLite is not persistent on Vercel")
+
+    cors_raw = os.getenv("CORS_ALLOW_ORIGIN", "")
+    cors_origins = {origin.strip() for origin in cors_raw.split(",") if origin.strip()}
+    if is_production and (not cors_origins or "*" in cors_origins):
+        raise RuntimeError("CORS_ALLOW_ORIGIN must contain explicit production origins")
+
     app = Flask(__name__)
     init_db()
     app.register_blueprint(chat_bp)
-    project_root = Path(__file__).resolve().parent.parent
     frontend_root = project_root / "frontend"
-    app_env = os.getenv("APP_ENV", "development").strip().lower()
-    is_production = app_env in {"prod", "production"}
     force_https = os.getenv("FORCE_HTTPS", "true").strip().lower() == "true"
 
     # Make scheme/host reliable behind reverse proxies (Render/Railway/Fly/Nginx, etc.)
@@ -32,8 +40,6 @@ def create_app() -> Flask:
         SESSION_COOKIE_SECURE=is_production,
     )
 
-    cors_raw = os.getenv("CORS_ALLOW_ORIGIN", "*")
-    cors_origins = {origin.strip() for origin in cors_raw.split(",") if origin.strip()}
     if not cors_origins:
         cors_origins = {"*"}
 

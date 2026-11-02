@@ -54,6 +54,8 @@ macOS / Linux
 - `FAST_REUSE_MIN_SCORE` (default: `0.96`, ใช้เมื่อเปิด `ENABLE_FAST_REUSE=true`)
 - `USE_MANUAL_CONTEXT` (`true`/`false`, default: `false`)
 - `QA_DB_PATH` (default: `backend/db/chat_memory.sqlite3`)
+- `DATABASE_URL` (จำเป็นบน Vercel; ใช้ PostgreSQL แบบ managed เช่น Neon)
+- `SESSION_SECRET` (ควรตั้งเป็น random secret สำหรับ production)
 
 ตัวอย่างไฟล์ `.env` สำหรับรัน local:
 ```env
@@ -71,6 +73,22 @@ CLOUD_LLM_MODEL=openai/gpt-4.1-mini
 
 ## Health Check
 - `GET /health`
+
+## Deploy บน Vercel
+
+Vercel Serverless ไม่รับประกันการเก็บไฟล์ถาวร ดังนั้น production จะไม่อนุญาตให้ใช้ SQLite และจะต้องตั้ง `DATABASE_URL` ไปยัง PostgreSQL แบบ managed ก่อน deploy ระบบใช้ schema เดิมสองตารางคือ `chat_turns` และ `top_search_events` โดยไม่ลบข้อมูลต้นฉบับ
+
+ขั้นตอนที่ปลอดภัย:
+
+1. สำรองไฟล์ SQLite เดิมและตรวจ `PRAGMA integrity_check`
+2. ตั้ง `DATABASE_URL` ของ PostgreSQL ใน Vercel Environment Variables เท่านั้น
+3. รัน `SOURCE_SQLITE_PATH=backend/db/chat_memory.sqlite3 DATABASE_URL=... python scripts/migrate_sqlite_to_postgres.py` จากเครื่องที่มีสิทธิ์เข้าถึงฐานข้อมูล
+4. ตรวจจำนวนแถวและ checksum ที่สคริปต์รายงานก่อน deploy
+5. เก็บ SQLite ต้นฉบับและไฟล์ backup ไว้จนกว่าจะตรวจ production Read/Write สำเร็จ
+
+Neon free tier เหมาะสำหรับทดลองและปริมาณใช้งานเล็ก แต่มีข้อจำกัดด้าน storage, compute, connection และอาจมีการพักฐานข้อมูลตามนโยบายของผู้ให้บริการ ควรใช้ connection pooling และพิจารณาแผนแบบเสียเงินเมื่อเป็นข้อมูลบริษัทหรือมีการใช้งานจริงต่อเนื่อง
+
+สำหรับข้อมูลบริษัท ต้องเปิดการป้องกัน deployment/authentication ขององค์กรหรือวาง Cloudflare Access/SSO ไว้หน้าระบบก่อนเปิดใช้งานจริง เพราะ frontend เดิมไม่มีหน้าจอ login และไม่ควรฝัง API token ไว้ใน JavaScript
 
 ## API ที่เพิ่ม
 - `POST /ask`
