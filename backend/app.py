@@ -1,7 +1,8 @@
 from pathlib import Path
 import os
+import threading
 
-from flask import Flask, abort, redirect, request, send_from_directory
+from flask import Flask, abort, jsonify, redirect, request, send_from_directory
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from dotenv import load_dotenv
@@ -17,16 +18,18 @@ def create_app() -> Flask:
     project_root = Path(__file__).resolve().parent.parent
     app_env = os.getenv("APP_ENV", "development").strip().lower()
     is_production = app_env in {"prod", "production"}
-    if is_production and not os.getenv("DATABASE_URL", "").strip():
-        raise RuntimeError("DATABASE_URL is required in production; SQLite is not persistent on Vercel")
+    has_database_url = bool(os.getenv("DATABASE_URL", "").strip())
 
     cors_raw = os.getenv("CORS_ALLOW_ORIGIN", "")
     cors_origins = {origin.strip() for origin in cors_raw.split(",") if origin.strip()}
-    if is_production and (not cors_origins or "*" in cors_origins):
-        raise RuntimeError("CORS_ALLOW_ORIGIN must contain explicit production origins")
+    if is_production and "*" in cors_origins:
+        cors_origins = set()
 
     app = Flask(__name__)
-    init_db()
+    if is_production and not has_database_url:
+        app.logger.error("DATABASE_URL is missing; API requests will return 503")
+    if is_production and not cors_origins:
+        app.logger.warning("CORS_ALLOW_ORIGIN is missing; cross-origin requests are disabled")
     app.register_blueprint(chat_bp)
     frontend_root = project_root / "frontend"
     force_https = os.getenv("FORCE_HTTPS", "true").strip().lower() == "true"
@@ -40,21 +43,44 @@ def create_app() -> Flask:
         SESSION_COOKIE_SECURE=is_production,
     )
 
+    db_state = {"ready": False}
+    db_lock = threading.Lock()
+
+    def ensure_database() -> bool:
+        if db_state["ready"]:
+            return True
+        if is_production and not has_database_url:
+            return False
+        with db_lock:
+            if db_state["ready"]:
+                return True
+            if is_production and not has_database_url:
+                return False
+            try:
+                init_db()
+            except Exception:
+                app.logger.exception("Database initialization failed")
+                return False
+            db_state["ready"] = True
+            return True
+
     if not cors_origins:
         cors_origins = {"*"}
 
     @app.before_request
     def enforce_https():
-        if not (is_production and force_https):
-            return None
+        if is_production and force_https:
+            forwarded_proto = request.headers.get("X-Forwarded-Proto", "")
+            is_https = request.is_secure or forwarded_proto == "https"
+            if not is_https:
+                https_url = request.url.replace("http://", "https://", 1)
+                return redirect(https_url, code=301)
 
-        forwarded_proto = request.headers.get("X-Forwarded-Proto", "")
-        is_https = request.is_secure or forwarded_proto == "https"
-        if is_https:
-            return None
+        api_paths = ("/ask", "/history", "/top-searches", "/dashboard/")
+        if request.path.startswith(api_paths) and not ensure_database():
+            return jsonify({"error": "database unavailable"}), 503
 
-        https_url = request.url.replace("http://", "https://", 1)
-        return redirect(https_url, code=301)
+        return None
 
     @app.after_request
     def add_cors_headers(response):
